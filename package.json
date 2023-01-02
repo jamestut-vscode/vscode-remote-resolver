@@ -1,0 +1,99 @@
+{
+  "name": "my-remote-resolver",
+  "description": "Connect to a remote instance of VSCode server.",
+  "version": "0.0.1",
+  "publisher": "saylor",
+  "license": "MIT",
+  "enableProposedApi": true,
+  "enabledApiProposals": [
+    "resolvers"
+  ],
+  "private": true,
+  "engines": {
+    "vscode": "^1.63.0"
+  },
+  "icon": "media/icon.png",
+  "extensionKind": [
+    "ui"
+  ],
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "vscode:prepublish": "npm run compile"
+  },
+  "activationEvents": [
+    "onResolveRemoteAuthority:test",
+    "onCommand:vscode-testresolver.newWindow",
+    "onCommand:vscode-testresolver.currentWindow",
+    "onCommand:vscode-testresolver.newWindowWithError",
+    "onCommand:vscode-testresolver.showLog"
+  ],
+  "main": "./out/extension",
+  "devDependencies": {
+    "@types/node": "16.x"
+  },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    },
+    "virtualWorkspaces": true
+  },
+  "contributes": {
+    "resourceLabelFormatters": [
+      {
+        "scheme": "vscode-remote",
+        "authority": "test+*",
+        "formatting": {
+          "label": "${path}",
+          "separator": "/",
+          "tildify": true,
+          "workspaceSuffix": "TestResolver",
+          "workspaceTooltip": "Remote running on the same machine"
+        }
+      }
+    ],
+    "commands": [
+      {
+        "title": "New TestResolver Window",
+        "category": "Remote-TestResolver",
+        "command": "vscode-testresolver.newWindow"
+      },
+      {
+        "title": "Connect to TestResolver in Current Window",
+        "category": "Remote-TestResolver",
+        "command": "vscode-testresolver.currentWindow"
+      },
+      {
+        "title": "Show TestResolver Log",
+        "category": "Remote-TestResolver",
+        "command": "vscode-testresolver.showLog"
+      }
+    ],
+    "menus": {
+      "statusBar/remoteIndicator": [
+        {
+          "command": "vscode-testresolver.newWindow",
+          "when": "!remoteName && !virtualWorkspace",
+          "group": "remote_90_test_1_local@2"
+        },
+        {
+          "command": "vscode-testresolver.showLog",
+          "when": "remoteName == test",
+          "group": "remote_90_test_1_open@3"
+        },
+        {
+          "command": "vscode-testresolver.newWindow",
+          "when": "remoteName == test",
+          "group": "remote_90_test_1_open@1"
+        }
+      ]
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/microsoft/vscode.git"
+  },
+  "dependencies": {
+    "typescript": "^4.9.4"
+  }
+}

@@ -1,0 +1,15 @@
+{
+	"extends": "./tsconfig.base.json",
+	"compilerOptions": {
+		"outDir": "./out",
+		"types": [
+			"node"
+		],
+		"sourceMap": true
+	},
+	"include": [
+		"./src/**/*",
+		"./vscode-dts/vscode.d.ts",
+		"./vscode-dts/vscode.proposed.resolvers.d.ts"
+	]
+}
