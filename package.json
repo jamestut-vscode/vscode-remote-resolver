@@ -25,7 +25,6 @@
     "onResolveRemoteAuthority:test",
     "onCommand:vscode-testresolver.newWindow",
     "onCommand:vscode-testresolver.currentWindow",
-    "onCommand:vscode-testresolver.newWindowWithError",
     "onCommand:vscode-testresolver.showLog"
   ],
   "main": "./out/extension",
@@ -78,7 +77,6 @@
         },
         {
           "command": "vscode-testresolver.showLog",
-          "when": "remoteName == test",
           "group": "remote_90_test_1_open@3"
         },
         {
