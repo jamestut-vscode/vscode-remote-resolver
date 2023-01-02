@@ -9,30 +9,14 @@ let outputChannel: vscode.OutputChannel;
 
 export function activate(context: vscode.ExtensionContext) {
 
-	function doResolve(_authority: string, progress: vscode.Progress<{ message?: string; increment?: number }>): Promise<vscode.ResolvedAuthority> {
+	function doResolve(_authority: string): vscode.ResolvedAuthority {
 		const connectionToken = undefined;
-
-		// eslint-disable-next-line no-async-promise-executor
-		const serverPromise = new Promise<vscode.ResolvedAuthority>(async (res, _rej) => {
-			progress.report({ message: 'Starting Test Resolver' });
-			outputChannel = vscode.window.createOutputChannel('TestResolver');
-
-			console.log("Server promise without proxy!");
-			res(new vscode.ResolvedAuthority('192.168.67.10', 8000, connectionToken));
-		});
-		return serverPromise;
+		return new vscode.ResolvedAuthority('192.168.67.10', 8000, connectionToken);
 	}
 
 	const authorityResolverDisposable = vscode.workspace.registerRemoteAuthorityResolver('test', {
-		async getCanonicalURI(uri: vscode.Uri): Promise<vscode.Uri> {
-			return vscode.Uri.file(uri.path);
-		},
-		resolve(_authority: string): Thenable<vscode.ResolvedAuthority> {
-			return vscode.window.withProgress({
-				location: vscode.ProgressLocation.Notification,
-				title: 'Open TestResolver Remote ([details](command:vscode-testresolver.showLog))',
-				cancellable: false
-			}, (progress) => doResolve(_authority, progress));
+		resolve(_authority: string): vscode.ResolvedAuthority {
+			return doResolve(_authority);
 		}
 	});
 	context.subscriptions.push(authorityResolverDisposable);
