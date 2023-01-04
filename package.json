@@ -23,9 +23,9 @@
   },
   "activationEvents": [
     "onResolveRemoteAuthority:test",
-    "onCommand:vscode-testresolver.newWindow",
-    "onCommand:vscode-testresolver.currentWindow",
-    "onCommand:vscode-testresolver.showLog"
+    "onCommand:remote-resolver.newWindow",
+    "onCommand:remote-resolver.currentWindow",
+    "onCommand:remote-resolver.showLog"
   ],
   "main": "./out/extension",
   "devDependencies": {
@@ -46,41 +46,41 @@
           "label": "${path}",
           "separator": "/",
           "tildify": true,
-          "workspaceSuffix": "TestResolver",
+          "workspaceSuffix": "RemoteResolver",
           "workspaceTooltip": "Remote running on the same machine"
         }
       }
     ],
     "commands": [
       {
-        "title": "New TestResolver Window",
-        "category": "Remote-TestResolver",
-        "command": "vscode-testresolver.newWindow"
+        "title": "New Remote Resolver Window",
+        "category": "Remote-Resolver",
+        "command": "remote-resolver.newWindow"
       },
       {
-        "title": "Connect to TestResolver in Current Window",
-        "category": "Remote-TestResolver",
-        "command": "vscode-testresolver.currentWindow"
+        "title": "Connect to Remote Resolver in Current Window",
+        "category": "Remote-Resolver",
+        "command": "remote-resolver.currentWindow"
       },
       {
-        "title": "Show TestResolver Log",
-        "category": "Remote-TestResolver",
-        "command": "vscode-testresolver.showLog"
+        "title": "Show Remote Resolver Log",
+        "category": "Remote-Resolver",
+        "command": "remote-resolver.showLog"
       }
     ],
     "menus": {
       "statusBar/remoteIndicator": [
         {
-          "command": "vscode-testresolver.newWindow",
+          "command": "remote-resolver.newWindow",
           "when": "!remoteName && !virtualWorkspace",
           "group": "remote_90_test_1_local@2"
         },
         {
-          "command": "vscode-testresolver.showLog",
+          "command": "remote-resolver.showLog",
           "group": "remote_90_test_1_open@3"
         },
         {
-          "command": "vscode-testresolver.newWindow",
+          "command": "remote-resolver.newWindow",
           "when": "remoteName == test",
           "group": "remote_90_test_1_open@1"
         }

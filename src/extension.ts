@@ -22,6 +22,13 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const authorityResolverDisposable = vscode.workspace.registerRemoteAuthorityResolver('test', {
 		resolve(_authority: string): vscode.ResolvedAuthority {
+			// vscode.workspace.registerRemoteAuthorityResolver('test', {
+			// 	async resolve(_authority: string): Promise<vscode.ResolvedAuthority> {
+			// 		console.log("Error thrown");
+			// 		throw vscode.RemoteAuthorityResolverError.NotAvailable("Not available", true);
+			// 	}
+			// });
+			console.log("Calling doResolve ...");
 			return doResolve(_authority);
 		}
 	});
@@ -41,15 +48,15 @@ export function activate(context: vscode.ExtensionContext) {
 		return vscode.commands.executeCommand('vscode.newWindow', { remoteAuthority: `test+${currValue}`, reuseWindow });
 	}
 
-	context.subscriptions.push(vscode.commands.registerCommand('vscode-testresolver.newWindow', async () => {
+	context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.newWindow', async () => {
 		return await connectCommand(false);
 	}));
 
-	context.subscriptions.push(vscode.commands.registerCommand('vscode-testresolver.currentWindow', async () => {
+	context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.currentWindow', async () => {
 		return await connectCommand(true);
 	}));
 
-	context.subscriptions.push(vscode.commands.registerCommand('vscode-testresolver.showLog', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.showLog', () => {
 		if (outputChannel) {
 			outputChannel.show();
 		}
