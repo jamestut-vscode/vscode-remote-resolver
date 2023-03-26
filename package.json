@@ -28,7 +28,8 @@
   "main": "./out/extension",
   "devDependencies": {
     "@types/node": "16.x",
-    "@vscode/vsce": "^2.18.0"
+    "@vscode/vsce": "^2.18.0",
+    "typescript": "^4.9.4"
   },
   "capabilities": {
     "untrustedWorkspaces": {
@@ -79,8 +80,5 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/jamestut/vscode-remote-resolver"
-  },
-  "dependencies": {
-    "typescript": "^4.9.4"
   }
 }
