@@ -1,43 +1,55 @@
-# Remote Resolver
+# VSCode REH Connector
 
-This extension demonstrates a simple example on how we could connect a local Visual Studio Code instance to a remote Visual Studio Code Server instance.
+Use this extension to connect to a remote VSCode REH (Remote Extension Host) server. This extension is similar to the official [VSCode Remote Extension](https://github.com/microsoft/vscode-remote-release), but this is geared towards those who prefers manual configurations or users of non-official version of Visual Studio Code (e.g. [OSS version of VSCode](https://github.com/microsoft/vscode) and [VSCodium](https://vscodium.com/)).
 
-This extension is a simplified and independent version of the example Visual Studio Code's [test resolver extension](https://github.com/microsoft/vscode/tree/main/extensions/vscode-test-resolver).
+By setting up the REH independently instead of automatically like the official VSCode SSH Extension, there are many advantages. For example:
+
+- Less resource usage when connecting to remote host. This extension does not check or attempt to download a matching REH version in any way.
+- Ability to run REH as users other than your SSH login. For example, this allows us to run VSCode REH as `root` when the SSH server does not allow direct root login, but allows `sudo` access.
+- by daemonizing the REH on the remote host, instant reconnection can be achieved.
+
+I highly recommend my [customized version of VSCode](https://github.com/jamestut/vscode). That version of VSCode has some changes, including making reconnection attempts faster and more reliable.
 
 ## Usage
 
-- Start the VSCode server on the remote host. The VSCode server has to be of the exact same version and commit as the local VSCode instance.
-  
-  - This extension does not support connection token: use the `--without-connection-token` option on the VSCode Server.
+- Start the VSCode server on the remote host. The VSCode server has to be of the exact same version and commit hash as the local VSCode instance.
+  - **This extension does not support connection token yet**: use the `--without-connection-token` option on the VSCode Server.
+- This extension's commands are available under the **REH Resolver** group name. Use one of those commands to connect to a VSCode REH instance via TCP/IP.
+- Alternatively, click the remote host indicator on the bottom left to list and open commands exclusively from remote connector extensions.
 
-- Open the command from this extension (under the **Remote-Resolver**) group to connect to the VSCode Server instance.
+### Downloading Official VSCode Server
 
-### Downloading VSCode Server
+If you are using the official VSCode build, follow these steps to obtain the official REH build.
 
-Current VSCode commit hash can be found in this URL:
+1. Get the current VSCode commit hash by doing HTTP `GET` to this URL:
 
-```
-https://update.code.visualstudio.com/api/latest/$(IDENTIFIER)/$(QUALITY)
-```
+    ```
+    https://update.code.visualstudio.com/api/latest/$(IDENTIFIER)/$(QUALITY)
+    ```
 
-The hash from the URL above corresponds to the [VSCode's git repo](https://github.com/microsoft/vscode).
+    The hash from the URL above corresponds to the [VSCode's git repo](https://github.com/microsoft/vscode).
 
-The download URL is here:
+2. Download the REH from this URL:
 
-```
-https://update.code.visualstudio.com/commit:$(COMMITHASH)/$(IDENTIFIER)/$(QUALITY)
-```
+    ```
+    https://update.code.visualstudio.com/commit:$(COMMITHASH)/$(IDENTIFIER)/$(QUALITY)
+    ```
 
 Where:
 
 - `COMMITHASH` is the hash of the commit obtained in the first URL.
-
 - `QUALITY` is either `stable` or `insider`.
-
 - `IDENTIFIER` for VSCode server is in form: `server-$(PLATFORM)-$(ARCH)`, optionally appending `-web` for a version capable of serving VSCode to a web browser (the one without `-web` is only suitable for use as remote host extension server).
-  
   - `PLATFORM` is either `linux` or `darwin`.
-  
   - `ARCH` is either `arm64` or `x64`.
 
+An example for the `IDENTIFIER` would be:
 
+- `server-darwin-arm64` for use with macOS on Apple Silicon.
+- `server-linux-x64` for use with Linux on x86_64.
+
+## Building
+
+1. Clone this repository.
+2. Run `npm install`.
+3. Run `npm vscode:publish` to generate the `.vsix`.

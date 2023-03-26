@@ -5,29 +5,33 @@
 
 import * as vscode from 'vscode';
 
-let outputChannel: vscode.OutputChannel;
-
 export function activate(context: vscode.ExtensionContext) {
-	outputChannel = vscode.window.createOutputChannel('Resolver Extension');
-	outputChannel.appendLine("Resolver extension is activating ...");
-
 	function doResolve(authority: string): vscode.ResolvedAuthority {
 		let [host, port] = authority.split("+", 2)[1].split(":", 2);
 		if (!port) {
 			throw new Error("Port number is undefined");
 		}
 		const connectionToken = undefined;
+
+		context.subscriptions.push(vscode.workspace.registerResourceLabelFormatter(
+			{
+				scheme: "vscode-remote",
+				authority: "tcpreh+*",
+				formatting: {
+					label: "${path}",
+					separator: "/",
+					tildify: true,
+					workspaceSuffix: `REH: ${host}`,
+					workspaceTooltip: "Remote Extension Host"
+				}
+			}
+		));
+
 		return new vscode.ResolvedAuthority(host, parseInt(port), connectionToken);
 	}
 
-	const authorityResolverDisposable = vscode.workspace.registerRemoteAuthorityResolver('test', {
+	const authorityResolverDisposable = vscode.workspace.registerRemoteAuthorityResolver('tcpreh', {
 		resolve(_authority: string): vscode.ResolvedAuthority {
-			// vscode.workspace.registerRemoteAuthorityResolver('test', {
-			// 	async resolve(_authority: string): Promise<vscode.ResolvedAuthority> {
-			// 		console.log("Error thrown");
-			// 		throw vscode.RemoteAuthorityResolverError.NotAvailable("Not available", true);
-			// 	}
-			// });
 			console.log("Calling doResolve ...");
 			return doResolve(_authority);
 		}
@@ -45,7 +49,7 @@ export function activate(context: vscode.ExtensionContext) {
 		if (!currValue)
 			return;
 		context.globalState.update(keyName, currValue);
-		return vscode.commands.executeCommand('vscode.newWindow', { remoteAuthority: `test+${currValue}`, reuseWindow });
+		return vscode.commands.executeCommand('vscode.newWindow', { remoteAuthority: `tcpreh+${currValue}`, reuseWindow });
 	}
 
 	context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.newWindow', async () => {
@@ -54,11 +58,5 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.currentWindow', async () => {
 		return await connectCommand(true);
-	}));
-
-	context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.showLog', () => {
-		if (outputChannel) {
-			outputChannel.show();
-		}
 	}));
 }
