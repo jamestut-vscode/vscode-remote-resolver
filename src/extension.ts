@@ -7,11 +7,10 @@ import * as vscode from 'vscode';
 
 export function activate(context: vscode.ExtensionContext) {
 	function doResolve(authority: string): vscode.ResolvedAuthority {
-		let [host, port] = authority.split("+", 2)[1].split(":", 2);
+		let [host, port, connectionToken] = authority.split("+", 2)[1].split(":", 3);
 		if (!port) {
 			throw new Error("Port number is undefined");
 		}
-		const connectionToken = undefined;
 
 		context.subscriptions.push(vscode.workspace.registerResourceLabelFormatter(
 			{
@@ -26,6 +25,12 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 			}
 		));
+
+		if (connectionToken) {
+			console.log(`Using connection token: '${connectionToken}'`);
+		} else {
+			console.log("No connection token specified.");
+		}
 
 		return new vscode.ResolvedAuthority(host, parseInt(port), connectionToken);
 	}
@@ -43,7 +48,7 @@ export function activate(context: vscode.ExtensionContext) {
 		let currValue: string | undefined = context.globalState.get<string>(keyName);
 		currValue = await vscode.window.showInputBox({
 			title: "Enter remote target (only TCP is supported)",
-			placeHolder: "hostname:port",
+			placeHolder: "hostname:port(:connectionToken)",
 			value: currValue
 		});
 		if (!currValue)
