@@ -13,7 +13,6 @@ I highly recommend my [customized version of VSCode](https://github.com/jamestut
 ## Usage
 
 - Start the VSCode server on the remote host. The VSCode server has to be of the exact same version and commit hash as the local VSCode instance.
-  - **This extension does not support connection token yet**: use the `--without-connection-token` option on the VSCode Server.
 - This extension's commands are available under the **REH Resolver** group name. Use one of those commands to connect to a VSCode REH instance via TCP/IP.
 - Alternatively, click the remote host indicator on the bottom left to list and open commands exclusively from remote connector extensions.
 
