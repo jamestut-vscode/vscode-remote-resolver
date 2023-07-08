@@ -6,6 +6,7 @@
 import * as vscode from 'vscode';
 
 export function activate(context: vscode.ExtensionContext) {
+	// remote authority resolver
 	function doResolve(authority: string): vscode.ResolvedAuthority {
 		let [host, port, connectionToken] = authority.split("+", 2)[1].split(":", 3);
 		if (!port) {
@@ -34,7 +35,6 @@ export function activate(context: vscode.ExtensionContext) {
 
 		return new vscode.ResolvedAuthority(host, parseInt(port), connectionToken);
 	}
-
 	const authorityResolverDisposable = vscode.workspace.registerRemoteAuthorityResolver('tcpreh', {
 		resolve(_authority: string): vscode.ResolvedAuthority {
 			console.log("Calling doResolve ...");
@@ -43,6 +43,7 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 	context.subscriptions.push(authorityResolverDisposable);
 
+	// the command to manually connect to REH instance
 	async function connectCommand(reuseWindow: boolean) {
 		const keyName = "lastEnteredHost";
 		let currValue: string | undefined = context.globalState.get<string>(keyName);
@@ -56,11 +57,9 @@ export function activate(context: vscode.ExtensionContext) {
 		context.globalState.update(keyName, currValue);
 		return vscode.commands.executeCommand('vscode.newWindow', { remoteAuthority: `tcpreh+${currValue}`, reuseWindow });
 	}
-
 	context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.newWindow', async () => {
 		return await connectCommand(false);
 	}));
-
 	context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.currentWindow', async () => {
 		return await connectCommand(true);
 	}));
