@@ -2,7 +2,7 @@
   "name": "vscode-remote-resolver",
   "displayName": "VSCode REH Connector",
   "description": "Connect to a VSCode REH (Remote Host Extension).",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "publisher": "jamestut",
   "license": "MIT",
   "enabledApiProposals": [
@@ -23,7 +23,8 @@
     "vscode:publish": "vsce package"
   },
   "activationEvents": [
-    "onResolveRemoteAuthority:tcpreh"
+    "onResolveRemoteAuthority:tcpreh",
+    "onView:remoteResolverManagerView"
   ],
   "main": "./out/extension",
   "devDependencies": {
@@ -51,6 +52,25 @@
         }
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "remote-resolver-manager",
+          "title": "Remote Manager",
+          "icon": "$(remote-explorer)"
+        }
+      ]
+    },
+    "views": {
+      "remote-resolver-manager": [
+        {
+          "id": "remoteResolverManagerView",
+          "name": "Remote List",
+          "icon": "$(remote-explorer)",
+          "contextualTitle": "Remote Manager"
+        }
+      ]
+    },
     "commands": [
       {
         "title": "New Remote Window",
@@ -61,6 +81,26 @@
         "title": "Connect to Remote in Current Window",
         "category": "REH Connector",
         "command": "remote-resolver.currentWindow"
+      },
+      {
+        "title": "New Remote",
+        "icon": "$(add)",
+        "command": "remote-resolver.manager.add"
+      },
+      {
+        "title": "New Remote from Recent Connection",
+        "icon": "$(add)",
+        "command": "remote-resolver.manager.addRecent"
+      },
+      {
+        "title": "Modify",
+        "icon": "$(pencil)",
+        "command": "remote-resolver.manager.edit"
+      },
+      {
+        "title": "Delete Remote",
+        "icon": "$(remove)",
+        "command": "remote-resolver.manager.remove"
       }
     ],
     "menus": {
@@ -72,6 +112,30 @@
         {
           "command": "remote-resolver.currentWindow",
           "group": "remote_90_tcpreh_1_local@1"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "remote-resolver.manager.add",
+          "when": "view == remoteResolverManagerView",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "remote-resolver.manager.edit",
+          "when": "view == remoteResolverManagerView && viewItem == remoteItem",
+          "group": "inline"
+        },
+        {
+          "command": "remote-resolver.manager.remove",
+          "when": "view == remoteResolverManagerView && viewItem == remoteItem",
+          "group": "inline"
+        },
+        {
+          "command": "remote-resolver.manager.addRecent",
+          "when": "view == remoteResolverManagerView && viewItem == remoteItemRecent",
+          "group": "inline"
         }
       ]
     }
