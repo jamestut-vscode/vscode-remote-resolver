@@ -99,7 +99,7 @@
       },
       {
         "title": "Delete Remote",
-        "icon": "$(remove)",
+        "icon": "$(trash)",
         "command": "remote-resolver.manager.remove"
       }
     ],
@@ -123,14 +123,14 @@
       ],
       "view/item/context": [
         {
-          "command": "remote-resolver.manager.edit",
-          "when": "view == remoteResolverManagerView && viewItem == remoteItem",
-          "group": "inline"
-        },
-        {
           "command": "remote-resolver.manager.remove",
           "when": "view == remoteResolverManagerView && viewItem == remoteItem",
-          "group": "inline"
+          "group": "inline@2"
+        },
+        {
+          "command": "remote-resolver.manager.edit",
+          "when": "view == remoteResolverManagerView && viewItem == remoteItem",
+          "group": "inline@1"
         },
         {
           "command": "remote-resolver.manager.addRecent",
