@@ -5,8 +5,9 @@
 
 import * as vscode from 'vscode';
 
-const RECENT_CONN_KEY = "recentConnDetails"
-const CONNMGR_DATA_KEY = "connectionData"
+const RECENT_CONN_KEY = "recentConnDetails";
+const CONNMGR_DATA_GENID_KEY = "connectionDataGenId";
+const CONNMGR_DATA_KEY = "connectionData";
 
 class RemoteInfo {
 	public readonly displayLabel: string;
@@ -151,7 +152,28 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// remote manager view
 	const remoteManagerDataProvider = new RemoteManagerDataProvider(context);
-	vscode.window.registerTreeDataProvider('remoteResolverManagerView', remoteManagerDataProvider);
+	const remoteResolverManagerView = vscode.window.createTreeView('remoteResolverManagerView', {
+		treeDataProvider: remoteManagerDataProvider
+	});
+
+	// data might be modified from other window/view: refresh when view is focused
+	remoteResolverManagerView.onDidChangeVisibility((e) => {
+		if (e.visible) {
+			remoteManagerDataProvider.refresh();
+		}
+	});
+	vscode.window.onDidChangeWindowState((e) => {
+		if (e.focused) {
+			remoteManagerDataProvider.refresh();
+		}
+	});
+
+	function updateConnData(newData : RemoteInfo[]) {
+		let genId = context.globalState.get<number>(CONNMGR_DATA_GENID_KEY, 0);
+		genId = (genId + 1) % 0xFFFF;
+		context.globalState.update(CONNMGR_DATA_GENID_KEY, genId);
+		context.globalState.update(CONNMGR_DATA_KEY, newData);
+	}
 
 	// commands to add/edit/remove items from remote manager
 	async function remoteManagerEditOrAdd(prefill?: RemoteInfo, editIndex?: number) {
@@ -192,7 +214,7 @@ export function activate(context: vscode.ExtensionContext) {
 		} else {
 			savedRemotes.push(connInfo);
 		}
-		context.globalState.update(CONNMGR_DATA_KEY, savedRemotes);
+		updateConnData(savedRemotes);
 
 		remoteManagerDataProvider.refresh();
 	}
@@ -229,7 +251,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 				// proceed with delete
 				savedRemotes!.splice(arg.entryIndex, 1);
-				context.globalState.update(CONNMGR_DATA_KEY, savedRemotes);
+				updateConnData(savedRemotes!);
 				remoteManagerDataProvider.refresh();
 			} finally {
 				quickPick.hide();
@@ -316,14 +338,23 @@ class RecentRemoteTreeItem extends vscode.TreeItem {
 }
 
 class RemoteManagerDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+	private _generationId: number;
 	private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined | void> = new vscode.EventEmitter<vscode.TreeItem | undefined | void>();
 	readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | void> = this._onDidChangeTreeData.event;
 
 	constructor(
 		private readonly extContext: vscode.ExtensionContext
-	) { }
+	) {
+		this._generationId = 0;
+	}
 
 	refresh() {
+		const newGenId = this.extContext.globalState.get<number>(CONNMGR_DATA_GENID_KEY, 0);
+		if (newGenId == this._generationId) {
+			// nothing changed
+			return;
+		}
+		this._generationId = newGenId;
 		this._onDidChangeTreeData.fire();
 	}
 
