@@ -3,13 +3,6 @@ import * as common from './common';
 import * as treeview from './treeview';
 import { context } from './extension';
 
-function updateConnData(newData : common.RemoteInfo[]) {
-    let genId = context.globalState.get<number>(common.CONNMGR_DATA_GENID_KEY, 0);
-    genId = (genId + 1) % 0xFFFF;
-    context.globalState.update(common.CONNMGR_DATA_GENID_KEY, genId);
-    context.globalState.update(common.CONNMGR_DATA_KEY, newData);
-}
-
 // commands to add/edit/remove items from remote manager
 export async function remoteManagerEditOrAdd(prefill?: common.RemoteInfo, editIndex?: number) {
     const inputAddr = await vscode.window.showInputBox({
@@ -49,7 +42,7 @@ export async function remoteManagerEditOrAdd(prefill?: common.RemoteInfo, editIn
     } else {
         savedRemotes.push(connInfo);
     }
-    updateConnData(savedRemotes);
+    common.updateConnData(savedRemotes);
 
     treeview.remoteManagerDataProvider.refresh();
 }
@@ -76,7 +69,7 @@ export function remoteManagerRemove(entryIndex: number) {
 
             // proceed with delete
             savedRemotes!.splice(entryIndex, 1);
-            updateConnData(savedRemotes!);
+            common.updateConnData(savedRemotes!);
             treeview.remoteManagerDataProvider.refresh();
         } finally {
             quickPick.hide();

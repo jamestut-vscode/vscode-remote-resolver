@@ -1,3 +1,5 @@
+import { context } from './extension';
+
 export const RECENT_CONN_KEY = "recentConnDetails";
 export const CONNMGR_DATA_GENID_KEY = "connectionDataGenId";
 export const CONNMGR_DATA_KEY = "connectionData";
@@ -77,4 +79,11 @@ export class RemoteInfo {
 		}
 		return RemoteInfo.fromAddress(address, labelOrAddress);
 	}
+}
+
+export function updateConnData(newData : RemoteInfo[]) {
+    let genId = context.globalState.get<number>(CONNMGR_DATA_GENID_KEY, 0);
+    genId = (genId + 1) % 0xFFFF;
+    context.globalState.update(CONNMGR_DATA_GENID_KEY, genId);
+    context.globalState.update(CONNMGR_DATA_KEY, newData);
 }
