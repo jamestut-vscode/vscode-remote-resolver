@@ -51,6 +51,46 @@ class RemoteManagerDataProvider implements vscode.TreeDataProvider<vscode.TreeIt
 	}
 }
 
+class RemoteManagerDragProvider implements vscode.TreeDragAndDropController<RemoteTreeItem> {
+	dropMimeTypes: readonly string[] = ['application/vnd.code.tree.tcprehmanager'];
+	dragMimeTypes: readonly string[] = ['application/vnd.code.tree.tcprehmanager'];
+
+	// @ts-ignore
+	private itemIndexDrag: number | undefined = undefined;
+
+	// @ts-ignore
+	handleDrag?(source: readonly RemoteTreeItem[], dataTransfer: vscode.DataTransfer, token: vscode.CancellationToken): void | Thenable<void> {
+		const src = source[0];
+		this.itemIndexDrag = src.entryIndex;
+	}
+
+	// @ts-ignore
+	handleDrop?(target: RemoteTreeItem | undefined, dataTransfer: vscode.DataTransfer, token: vscode.CancellationToken): void | Thenable<void> {
+		const targetIndex = target?.entryIndex;
+		if (this.itemIndexDrag === undefined || targetIndex === undefined || targetIndex == this.itemIndexDrag) {
+			return;
+		}
+
+		const savedRemotes = context.globalState.get<common.RemoteInfo[]>(common.CONNMGR_DATA_KEY)!;
+		const srcItem = savedRemotes[this.itemIndexDrag];
+
+		if (targetIndex > this.itemIndexDrag) {
+			for (let i = this.itemIndexDrag; i < targetIndex; ++i) {
+				savedRemotes[i] = savedRemotes[i + 1];
+			}
+		} else {
+			for (let i = this.itemIndexDrag - 1; i >= targetIndex; --i) {
+				savedRemotes[i + 1] = savedRemotes[i];
+			}
+		}
+		savedRemotes[targetIndex] = srcItem;
+
+		common.updateConnData(savedRemotes);
+		remoteManagerDataProvider.refresh();
+	}
+
+}
+
 class RemoteTreeItem extends vscode.TreeItem {
 	constructor(
 		public readonly remoteInfo: common.RemoteInfo,
@@ -99,7 +139,8 @@ class RecentRemoteTreeItem extends vscode.TreeItem {
 export function initializeTreeView() {
     remoteManagerDataProvider = new RemoteManagerDataProvider(context);
 	const remoteResolverManagerView = vscode.window.createTreeView('remoteResolverManagerView', {
-		treeDataProvider: remoteManagerDataProvider
+		treeDataProvider: remoteManagerDataProvider,
+		dragAndDropController: new RemoteManagerDragProvider()
 	});
 
     // data might be modified from other window/view: refresh when view is focused
