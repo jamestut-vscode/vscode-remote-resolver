@@ -2,7 +2,7 @@
   "name": "vscode-remote-resolver",
   "displayName": "VSCode REH Connector",
   "description": "Connect to a VSCode REH (Remote Host Extension).",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "publisher": "jamestut",
   "license": "MIT",
   "enabledApiProposals": [

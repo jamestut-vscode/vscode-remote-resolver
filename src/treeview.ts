@@ -3,9 +3,8 @@ import * as common from './common';
 import { context } from './extension';
 
 export let remoteManagerDataProvider: RemoteManagerDataProvider;
-export let remoteResolverManagerView: vscode.TreeView<vscode.TreeItem>;
 
-export class RemoteManagerDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+class RemoteManagerDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
 	private _generationId: number;
 	private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined | void> = new vscode.EventEmitter<vscode.TreeItem | undefined | void>();
 	readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | void> = this._onDidChangeTreeData.event;
@@ -99,7 +98,7 @@ class RecentRemoteTreeItem extends vscode.TreeItem {
 
 export function initializeTreeView() {
     remoteManagerDataProvider = new RemoteManagerDataProvider(context);
-	remoteResolverManagerView = vscode.window.createTreeView('remoteResolverManagerView', {
+	const remoteResolverManagerView = vscode.window.createTreeView('remoteResolverManagerView', {
 		treeDataProvider: remoteManagerDataProvider
 	});
 
