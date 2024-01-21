@@ -33,7 +33,7 @@ export async function remoteManagerEditOrAdd(prefill?: common.RemoteInfo, editIn
         return;
     }
 
-    let savedRemotes = context.globalState.get<common.RemoteInfo[]>(common.CONNMGR_DATA_KEY);
+    let savedRemotes = common.getConnData();
     if (!savedRemotes)
         savedRemotes = [];
 
@@ -48,7 +48,7 @@ export async function remoteManagerEditOrAdd(prefill?: common.RemoteInfo, editIn
 }
 
 export function remoteManagerRemove(entryIndex: number) {
-    let savedRemotes = context.globalState.get<common.RemoteInfo[]>(common.CONNMGR_DATA_KEY);
+    let savedRemotes = common.getConnData();
     if (!savedRemotes)
         return;
 
@@ -84,7 +84,7 @@ export function remoteManagerSelectItem(arg: string | number) {
     if (arg === 'recent') {
         remoteInfo = context.globalState.get<common.RemoteInfo>(common.RECENT_CONN_KEY)!;
     } else {
-        const savedRemotes = context.globalState.get<common.RemoteInfo[]>(common.CONNMGR_DATA_KEY);
+        const savedRemotes = common.getConnData();
         remoteInfo = savedRemotes![arg as number];
     }
 

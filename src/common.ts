@@ -87,3 +87,7 @@ export function updateConnData(newData : RemoteInfo[]) {
     context.globalState.update(CONNMGR_DATA_GENID_KEY, genId);
     context.globalState.update(CONNMGR_DATA_KEY, newData);
 }
+
+export function getConnData() : RemoteInfo[] {
+	return context.globalState.get<RemoteInfo[]>(CONNMGR_DATA_KEY, []);
+}

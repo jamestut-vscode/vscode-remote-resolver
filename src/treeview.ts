@@ -40,7 +40,7 @@ class RemoteManagerDataProvider implements vscode.TreeDataProvider<vscode.TreeIt
 			ret.push(new RecentRemoteTreeItem(recentRemoteInfo));
 		}
 
-		const savedRemotes = this.extContext.globalState.get<common.RemoteInfo[]>(common.CONNMGR_DATA_KEY);
+		const savedRemotes = common.getConnData();
 		if (savedRemotes) {
 			for (let i = 0; i < savedRemotes.length; ++i) {
 				ret.push(new RemoteTreeItem(savedRemotes[i], i));
@@ -71,7 +71,7 @@ class RemoteManagerDragProvider implements vscode.TreeDragAndDropController<Remo
 			return;
 		}
 
-		const savedRemotes = context.globalState.get<common.RemoteInfo[]>(common.CONNMGR_DATA_KEY)!;
+		const savedRemotes = common.getConnData();
 		const srcItem = savedRemotes[this.itemIndexDrag];
 
 		if (targetIndex > this.itemIndexDrag) {
