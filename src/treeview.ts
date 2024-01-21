@@ -56,34 +56,35 @@ class RemoteManagerDragProvider implements vscode.TreeDragAndDropController<Remo
 	dragMimeTypes: readonly string[] = ['application/vnd.code.tree.tcprehmanager'];
 
 	// @ts-ignore
-	private itemIndexDrag: number | undefined = undefined;
+	private itemToMove: vscode.TreeItem = undefined;
 
 	// @ts-ignore
-	handleDrag?(source: readonly RemoteTreeItem[], dataTransfer: vscode.DataTransfer, token: vscode.CancellationToken): void | Thenable<void> {
+	handleDrag?(source: readonly vscode.TreeItem[], dataTransfer: vscode.DataTransfer, token: vscode.CancellationToken): void | Thenable<void> {
 		const src = source[0];
-		this.itemIndexDrag = src.entryIndex;
+		this.itemToMove = src;
 	}
 
 	// @ts-ignore
-	handleDrop?(target: RemoteTreeItem | undefined, dataTransfer: vscode.DataTransfer, token: vscode.CancellationToken): void | Thenable<void> {
-		const targetIndex = target?.entryIndex;
-		if (this.itemIndexDrag === undefined || targetIndex === undefined || targetIndex == this.itemIndexDrag) {
+	handleDrop?(target: vscode.TreeItem | undefined, dataTransfer: vscode.DataTransfer, token: vscode.CancellationToken): void | Thenable<void> {
+		if (!(this.itemToMove instanceof RemoteTreeItem) || !(target instanceof RemoteTreeItem)) {
 			return;
 		}
+		const srcIndex = this.itemToMove.entryIndex;
+		const dstIndex = target.entryIndex;
 
 		const savedRemotes = common.getConnData();
-		const srcItem = savedRemotes[this.itemIndexDrag];
+		const srcItem = savedRemotes[srcIndex];
 
-		if (targetIndex > this.itemIndexDrag) {
-			for (let i = this.itemIndexDrag; i < targetIndex; ++i) {
+		if (dstIndex > srcIndex) {
+			for (let i = srcIndex; i < dstIndex; ++i) {
 				savedRemotes[i] = savedRemotes[i + 1];
 			}
 		} else {
-			for (let i = this.itemIndexDrag - 1; i >= targetIndex; --i) {
+			for (let i = srcIndex - 1; i >= dstIndex; --i) {
 				savedRemotes[i + 1] = savedRemotes[i];
 			}
 		}
-		savedRemotes[targetIndex] = srcItem;
+		savedRemotes[dstIndex] = srcItem;
 
 		common.updateConnData(savedRemotes);
 		remoteManagerDataProvider.refresh();
@@ -94,7 +95,7 @@ class RemoteManagerDragProvider implements vscode.TreeDragAndDropController<Remo
 class RemoteTreeItem extends vscode.TreeItem {
 	constructor(
 		public readonly remoteInfo: common.RemoteInfo,
-		public readonly entryIndex?: number
+		public readonly entryIndex: number
 	) {
 		super(remoteInfo.displayLabel, vscode.TreeItemCollapsibleState.None);
 
