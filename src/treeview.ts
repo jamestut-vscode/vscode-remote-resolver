@@ -102,9 +102,9 @@ class RemoteTreeItem extends vscode.TreeItem {
 		this.description = remoteInfo.label ? [remoteInfo.host, remoteInfo.port].join(":") : "";
 
 		if (remoteInfo.connectionToken) {
-			this.iconPath = new vscode.ThemeIcon('lock');
+			this.iconPath = new vscode.ThemeIcon('vm-active');
 		} else {
-			this.iconPath = new vscode.ThemeIcon('unlock');
+			this.iconPath = new vscode.ThemeIcon('vm');
 		}
 
 		this.command = {
