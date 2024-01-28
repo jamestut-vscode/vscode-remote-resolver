@@ -4,7 +4,7 @@ import { dataStor } from './extension';
 
 // the command to manually connect to REH instance
 export async function connectCommand(reuseWindow: boolean) {
-    let recentConnInfo = dataStor.get<common.RemoteInfo>(common.RECENT_CONN_KEY);
+    let recentConnInfo = common.RemoteInfo.fromJSON(dataStor.get(common.RECENT_CONN_KEY));
     const inputAddr = await vscode.window.showInputBox({
         title: "Enter remote target (only TCP is supported)",
         placeHolder: "hostname:port(:connectionToken)",
@@ -23,10 +23,10 @@ export async function connectCommand(reuseWindow: boolean) {
         return;
     }
 
-    connectAuthority(currConnInfo.authority, reuseWindow);
+    connectAuthority(currConnInfo, reuseWindow);
 }
 
-export function connectAuthority(authority: string, reuseWindow: boolean) {
+export function connectAuthority(remoteInfo: common.RemoteInfo, reuseWindow: boolean) {
     return vscode.commands.executeCommand('vscode.newWindow',
-        { remoteAuthority: `tcpreh+${authority}`, reuseWindow });
+        { remoteAuthority: remoteInfo.fullAuthority, reuseWindow });
 }

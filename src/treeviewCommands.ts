@@ -185,7 +185,7 @@ export function connect(
     item: treeview.RemoteTreeItem | treeview.RecentRemoteTreeItem,
     reuseWindow: boolean
 ) {
-    return commands.connectAuthority(item.remoteInfo.authority, reuseWindow);
+    return commands.connectAuthority(item.remoteInfo, reuseWindow);
 }
 
 /**

@@ -41,7 +41,7 @@ class RemoteManagerDataProvider implements vscode.TreeDataProvider<vscode.TreeIt
 		} else {
 			// This is root element.
 			// we have a special item here: recent connection
-			const recentRemoteInfo = dataStor.get<common.RemoteInfo>(common.RECENT_CONN_KEY);
+			const recentRemoteInfo = common.RemoteInfo.fromJSON(dataStor.get(common.RECENT_CONN_KEY));
 			if (recentRemoteInfo) {
 				ret.push(new RecentRemoteTreeItem(recentRemoteInfo));
 			}
@@ -251,12 +251,6 @@ export class RecentRemoteTreeItem extends vscode.TreeItem {
 
 	override iconPath = new vscode.ThemeIcon('remote');
 	override contextValue = 'remoteItemRecent';
-	// TODO
-	override command = {
-		title: "Connect to Remote",
-		command: "remote-resolver.manager.itemSelect",
-		arguments: ["recent"]
-	};
 }
 
 export class DirectoryTreeItem extends vscode.TreeItem {
