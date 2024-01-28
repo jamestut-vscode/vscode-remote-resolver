@@ -9,40 +9,67 @@ import * as authority from './authority';
 import * as commands from './commands';
 import * as treeview from './treeview';
 import * as treeviewCommands from './treeviewCommands';
+// import { MockFileMemento } from './mocks/memento';
 
-export let context: vscode.ExtensionContext;
+export let dataStor: vscode.Memento;
 
-export function activate(extContext: vscode.ExtensionContext) {
-    context = extContext;
+let extContext: vscode.ExtensionContext;
+
+export async function activate(context: vscode.ExtensionContext) {
+    extContext = context;
+
+    dataStor = context.globalState;
+
+    await common.maybeUpgradeConnData();
+
+    // preload data so that common.currConnData is never undefined
+    common.getConnData();
 
     treeview.initializeTreeView();
 
-    context.subscriptions.push(vscode.workspace.registerRemoteAuthorityResolver('tcpreh', 
+    context.subscriptions.push(vscode.workspace.registerRemoteAuthorityResolver('tcpreh',
         new authority.AuthorityResolver()));
 
     context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.newWindow', async () => {
         return await commands.connectCommand(false);
     }));
+
     context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.currentWindow', async () => {
         return await commands.connectCommand(true);
     }));
 
-    context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.manager.add', () => {
-        treeviewCommands.remoteManagerEditOrAdd();
-    }));
-    context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.manager.addRecent', () => {
-        treeviewCommands.remoteManagerEditOrAdd(context.globalState.get<common.RemoteInfo>(common.RECENT_CONN_KEY));
+    context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.manager.connectNewWindow', async (arg) => {
+        return await treeviewCommands.connect(arg, false);
     }));
 
-    context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.manager.edit', (arg) => {
-        treeviewCommands.remoteManagerEditOrAdd(arg.remoteInfo, arg.entryIndex);
+    context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.manager.connectCurrentWindow', async (arg) => {
+        return await treeviewCommands.connect(arg, true);
     }));
 
-    context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.manager.remove', (arg) => {
-        treeviewCommands.remoteManagerRemove(arg.entryIndex)
-    }));
+    for (const cmdId of ['remote-resolver.manager.add', 'remote-resolver.manager.addRecent', 'remote-resolver.manager.edit']) {
+        context.subscriptions.push(vscode.commands.registerCommand(cmdId,
+            treeviewCommands.remoteManagerEditOrAdd));
+    }
 
-    // command to connect to the remote when an item is selected from the remote manager view
-    context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.manager.itemSelect', 
-        treeviewCommands.remoteManagerSelectItem));
+    context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.manager.remove',
+        treeviewCommands.remoteManagerRemoveRemote));
+
+    context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.manager.addFolder',
+        treeviewCommands.remoteManagerAddDir));
+
+    context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.manager.renameFolder',
+        treeviewCommands.remoteManagerRenameDir));
+
+    context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.manager.removeFolder', 
+        treeviewCommands.remoteManagerRemoveDir));
+
+    context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.manager.moveUp', 
+        treeviewCommands.moveUp));
+
+    context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.manager.moveDown', 
+        treeviewCommands.moveDown));
+}
+
+export function getContext(): vscode.ExtensionContext {
+    return extContext;
 }

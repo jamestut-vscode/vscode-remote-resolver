@@ -1,8 +1,17 @@
-import { context } from './extension';
+import { dataStor } from './extension';
 
 export const RECENT_CONN_KEY = "recentConnDetails";
 export const CONNMGR_DATA_GENID_KEY = "connectionDataGenId";
-export const CONNMGR_DATA_KEY = "connectionData";
+
+const CONNMGR_DATA_KEY = "connectionData";
+
+// internal data versioning
+const CONNMGR_DATA_VERSION_KEY = "version";
+const CURR_CONNMGR_DATA_VERSION = 1;
+
+// caching for getConnData
+let currGenId: number = -1;
+let currConnData: ContainerInfo;
 
 export class RemoteInfo {
 	public readonly displayLabel: string;
@@ -26,6 +35,19 @@ export class RemoteInfo {
 		}
 		fullAuthComp.push(this.authority);
 		this.fullAuthority = fullAuthComp.join("+");
+	}
+
+	toJSON() {
+		return {
+			host: this.host,
+			port: this.port,
+			label: this.label,
+			connectionToken: this.connectionToken
+		}
+	}
+
+	static fromJSON(obj: any): RemoteInfo {
+		return new RemoteInfo(obj.host, obj.port, obj.label, obj.connectionToken);
 	}
 
 	static fromAddress(address: string, label?: string): RemoteInfo {
@@ -81,13 +103,125 @@ export class RemoteInfo {
 	}
 }
 
-export function updateConnData(newData : RemoteInfo[]) {
-    let genId = context.globalState.get<number>(CONNMGR_DATA_GENID_KEY, 0);
-    genId = (genId + 1) % 0xFFFF;
-    context.globalState.update(CONNMGR_DATA_GENID_KEY, genId);
-    context.globalState.update(CONNMGR_DATA_KEY, newData);
+export class DirectoryInfo {
+	public dirIds: string[] = [];
+	public remoteIds: string[] = [];
+
+	constructor(
+		public label: string,
+		dirIds: string[] | undefined = undefined,
+		remoteIds: string[] | undefined = undefined
+	) {
+		if (Array.isArray(dirIds)) {
+			this.dirIds = dirIds;
+		}
+		if (Array.isArray(remoteIds)) {
+			this.remoteIds = remoteIds;
+		}
+	}
+
+	static fromJSON(obj: any): DirectoryInfo {
+		return new DirectoryInfo(obj.label, obj.dirIds, obj.remoteIds);
+	}
+
+	toJSON() {
+		return {
+			label: this.label,
+			dirIds: this.dirIds,
+			remoteIds: this.remoteIds
+		}
+	}
+
+	get displayLabel(): string {
+		// for interface consistency with RemoteInfo
+		return this.label;
+	}
 }
 
-export function getConnData() : RemoteInfo[] {
-	return context.globalState.get<RemoteInfo[]>(CONNMGR_DATA_KEY, []);
+export class ContainerInfo {
+	public directories = new Map<string, DirectoryInfo>();
+	public remotes = new Map<string, RemoteInfo>();
+
+	static fromJSON(obj: any): ContainerInfo {
+		const ret = new ContainerInfo();
+		Object.entries(obj.directories).forEach(v => {
+			ret.directories.set(v[0], DirectoryInfo.fromJSON(v[1]));
+		});
+		Object.entries(obj.remotes).forEach(v => {
+			ret.remotes.set(v[0], RemoteInfo.fromJSON(v[1]));
+		});
+		return ret;
+	}
+
+	toJSON(): any {
+		return {
+			"directories": Object.fromEntries(this.directories),
+			"remotes": Object.fromEntries(this.remotes)
+		}
+	}
+}
+
+/**
+ * Call this function to sync the in-memory storage to the underlying Memento storage
+ */
+export async function updateConnData() {
+	const genId = dataStor.get<number>(CONNMGR_DATA_GENID_KEY, 0);
+	currGenId = (genId + 1) % 0xFFFF;
+	await dataStor.update(CONNMGR_DATA_GENID_KEY, currGenId);
+	await dataStor.update(CONNMGR_DATA_KEY, currConnData);
+}
+
+export function getConnData(): ContainerInfo {
+	const gsGenId = dataStor.get<number>(CONNMGR_DATA_GENID_KEY, 0);
+	if (currConnData === undefined || gsGenId !== currGenId) {
+		const sData = dataStor.get<any>(CONNMGR_DATA_KEY);
+		currConnData = sData ? ContainerInfo.fromJSON(sData) : new ContainerInfo();
+	}
+	return currConnData;
+}
+
+export function genId(kind: "dir" | "remote", contInfo: ContainerInfo = currConnData): string {
+	const mapData: Map<string, any> = kind === "remote" ? contInfo.remotes : contInfo.directories;
+	while (true) {
+		let newId = kind.charAt(0);
+		const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+		for (let i = 0; i < 12; ++i) {
+			newId += characters.charAt(Math.random() * characters.length);
+		}
+
+		if (!mapData.has(newId)) {
+			return newId;
+		}
+	}
+}
+
+export async function maybeUpgradeConnData() {
+	const dataVer = dataStor.get<number>(CONNMGR_DATA_VERSION_KEY, 0);
+	if (dataVer == CURR_CONNMGR_DATA_VERSION) {
+		// perform sanitation only
+		getConnData();
+		if (!currConnData.directories.has("root")) {
+			currConnData.directories.set("root", new DirectoryInfo("root"));
+			await updateConnData();
+		}
+		return;
+	} else if (dataVer > CURR_CONNMGR_DATA_VERSION) {
+		console.error(`Stored data version ${dataVer} is unsupported.`);
+		return;
+	}
+
+	// upgrade from version 0 to version 1
+	const oldRemotes = dataStor.get<any[]>(CONNMGR_DATA_KEY, []);
+
+	currConnData = new ContainerInfo();
+	for (const remote of oldRemotes) {
+		const newRemote = new RemoteInfo(remote.host, remote.port, remote.label, remote.connectionToken);
+		currConnData.remotes.set(genId("remote", currConnData), newRemote);
+	}
+
+	const rootDir = new DirectoryInfo("root", undefined, [...currConnData.remotes.keys()]);
+	currConnData.directories.set("root", rootDir);
+
+	await dataStor.update(CONNMGR_DATA_VERSION_KEY, CURR_CONNMGR_DATA_VERSION);
+	await updateConnData();
 }

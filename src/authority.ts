@@ -1,10 +1,11 @@
 import * as vscode from 'vscode';
 import * as common from './common';
-import { context } from './extension';
+import { getContext } from './extension';
 
 // remote authority resolver
 function doResolve(authority: string): vscode.ResolvedAuthority {
     const remoteInfo = common.RemoteInfo.fromFullAuthority(authority);
+    const context = getContext();
 
     context.subscriptions.push(vscode.workspace.registerResourceLabelFormatter(
         {

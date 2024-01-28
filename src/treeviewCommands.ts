@@ -1,14 +1,30 @@
 import * as vscode from 'vscode';
 import * as common from './common';
 import * as treeview from './treeview';
-import { context } from './extension';
+import * as commands from './commands';
 
-// commands to add/edit/remove items from remote manager
-export async function remoteManagerEditOrAdd(prefill?: common.RemoteInfo, editIndex?: number) {
+export async function remoteManagerEditOrAdd(
+    remoteItem: treeview.DirectoryTreeItem | treeview.RemoteTreeItem | treeview.RecentRemoteTreeItem | undefined
+) {
+    const connData = common.getConnData();
+    let remoteToEdit: common.RemoteInfo | undefined = undefined;
+    let parentDirId: string;
+    if (remoteItem instanceof treeview.DirectoryTreeItem) {
+        // we're adding a new remote from a folder
+        parentDirId = remoteItem.entryId;
+    } else {
+        remoteToEdit = remoteItem?.remoteInfo;
+        parentDirId = treeview.getDirId(remoteItem?.parentDir);
+    }
+    const parentDirInfo = connData.directories.get(parentDirId);
+    if (!parentDirInfo) {
+        throw new Error(`Error retreiving directory info for '${parentDirId}'`);
+    }
+
     const inputAddr = await vscode.window.showInputBox({
         title: "Add remote address",
         placeHolder: "hostname:port(:connectionToken)",
-        value: prefill?.authority
+        value: remoteToEdit?.authority
     });
     if (!inputAddr)
         return;
@@ -16,7 +32,7 @@ export async function remoteManagerEditOrAdd(prefill?: common.RemoteInfo, editIn
     let inputLabel = await vscode.window.showInputBox({
         title: "Enter nickname (optional)",
         placeHolder: "nickname",
-        value: prefill?.label
+        value: remoteToEdit?.label
     });
     if (inputLabel === undefined) {
         // user changed their mind while entering the nickname
@@ -25,40 +41,71 @@ export async function remoteManagerEditOrAdd(prefill?: common.RemoteInfo, editIn
     if (!inputLabel)
         inputLabel = undefined;
 
-    let connInfo: common.RemoteInfo;
+    let newRemoteInfo: common.RemoteInfo;
     try {
-        connInfo = common.RemoteInfo.fromAddress(inputAddr, inputLabel);
+        newRemoteInfo = common.RemoteInfo.fromAddress(inputAddr, inputLabel);
     } catch (err) {
         vscode.window.showErrorMessage(err.message);
         return;
     }
 
-    let savedRemotes = common.getConnData();
-    if (!savedRemotes)
-        savedRemotes = [];
-
-    if (editIndex !== undefined) {
-        savedRemotes[editIndex] = connInfo;
+    let remoteId;
+    if (remoteItem instanceof treeview.RemoteTreeItem) {
+        remoteId = remoteItem.entryId;
     } else {
-        savedRemotes.push(connInfo);
+        // we're creating new remote instead of editing: update the dir info of the parent
+        remoteId = common.genId("remote");
+        parentDirInfo.remoteIds.push(remoteId);
     }
-    common.updateConnData(savedRemotes);
+    connData.remotes.set(remoteId, newRemoteInfo);
 
-    treeview.remoteManagerDataProvider.refresh();
+    commonTreeviewUpdate(remoteItem?.parentDir);
 }
 
-export function remoteManagerRemove(entryIndex: number) {
-    let savedRemotes = common.getConnData();
-    if (!savedRemotes)
-        return;
+export function remoteManagerRemoveRemote(remoteItem: treeview.RemoteTreeItem) {
+    const connData = common.getConnData();
+    const parentDirId = treeview.getDirId(remoteItem.parentDir);
+    const parentDirInfo = connData.directories.get(parentDirId)!;
+    const remoteInfo = connData.remotes.get(remoteItem.entryId)!;
 
-    const remoteInfo = savedRemotes[entryIndex];
-    const quickPick = vscode.window.createQuickPick();
+    commonDeleteConfirmDialog(`Confirm delete '${remoteInfo.displayLabel}'`, () => {
+        parentDirInfo.remoteIds.splice(remoteItem.entryIndex, 1);
+        connData.remotes.delete(remoteItem.entryId);
+        commonTreeviewUpdate(remoteItem.parentDir);
+    });
+}
+
+export function remoteManagerRemoveDir(dirItem: treeview.DirectoryTreeItem) {
+    const connData = common.getConnData();
+    const parentDirInfo = connData.directories.get(treeview.getDirId(dirItem.parentDir))!;
+
+    commonDeleteConfirmDialog(`Confirm delete '${dirItem.label}' and all of its entries`, () => {
+        parentDirInfo.dirIds.splice(dirItem.entryIndex, 1);
+        removeDirRecursive(dirItem.entryId);
+        commonTreeviewUpdate(dirItem.parentDir);
+    });
+}
+
+function removeDirRecursive(dirId: string) {
+    const connData = common.getConnData();
+    const rmDirInfo = connData.directories.get(dirId)!;
+
+    for (const chldRemoteId of rmDirInfo.remoteIds) {
+        connData.remotes.delete(chldRemoteId);
+    }
+    for (const chldDirId of rmDirInfo.dirIds) {
+        removeDirRecursive(chldDirId);
+    }
+    connData.directories.delete(dirId);
+}
+
+function commonDeleteConfirmDialog(msg: string, confirmCallback: () => void) {
     const cancelLabel = 'Cancel';
-    const labels = [
-        `Confirm delete ${remoteInfo.displayLabel}`,
-        cancelLabel
-    ];
+    if (msg === cancelLabel) {
+        throw Error("Invalid label");
+    }
+    const labels = [msg, cancelLabel];
+    const quickPick = vscode.window.createQuickPick();
     quickPick.items = labels.map(label => ({ label }));
     quickPick.onDidChangeSelection(selection => {
         try {
@@ -66,11 +113,7 @@ export function remoteManagerRemove(entryIndex: number) {
                 return;
             if (selection[0].label === cancelLabel)
                 return;
-
-            // proceed with delete
-            savedRemotes!.splice(entryIndex, 1);
-            common.updateConnData(savedRemotes!);
-            treeview.remoteManagerDataProvider.refresh();
+            confirmCallback();
         } finally {
             quickPick.hide();
         }
@@ -79,31 +122,77 @@ export function remoteManagerRemove(entryIndex: number) {
     quickPick.show();
 }
 
-export function remoteManagerSelectItem(arg: string | number) {
-    let remoteInfo: common.RemoteInfo;
-    if (arg === 'recent') {
-        remoteInfo = context.globalState.get<common.RemoteInfo>(common.RECENT_CONN_KEY)!;
-    } else {
-        const savedRemotes = common.getConnData();
-        remoteInfo = savedRemotes![arg as number];
-    }
-
-    const quickPick = vscode.window.createQuickPick();
-
-    // corresponds to the "reuseWindow" attribute
-    const labels = [
-        `Connect to ${remoteInfo.displayLabel} in New Window`,
-        `Connect to ${remoteInfo.displayLabel} in Current Window`
-    ]
-    quickPick.items = labels.map(label => ({ label }));
-    quickPick.onDidChangeSelection(selection => {
-        if (!selection.length)
+export function remoteManagerRenameDir(dirItem: treeview.DirectoryTreeItem) {
+    const currName = dirItem.label?.toString();
+    commonFolderNameInputDialog(currName, (newName) => {
+        if (newName === currName) {
             return;
-        // actually do the stuffs
-        const reuseWindow = Boolean(labels.indexOf(selection[0].label));
-        return vscode.commands.executeCommand('vscode.newWindow',
-            { remoteAuthority: remoteInfo.fullAuthority, reuseWindow });
+        }
+        const connData = common.getConnData();
+        connData.directories.get(dirItem.entryId)!.label = newName;
+        commonTreeviewUpdate(dirItem.parentDir);
+    })
+}
+
+export function remoteManagerAddDir(parentDir: treeview.DirectoryTreeItem | undefined) {
+    commonFolderNameInputDialog(undefined, (newName) => {
+        const parentDirId = treeview.getDirId(parentDir);
+        const connData = common.getConnData();
+        const newDirId = common.genId("dir");
+        connData.directories.set(newDirId, new common.DirectoryInfo(newName));
+        connData.directories.get(parentDirId)!.dirIds.push(newDirId);
+        commonTreeviewUpdate(parentDir);
     });
-    quickPick.onDidHide(() => quickPick.dispose());
-    quickPick.show();
+}
+
+async function commonFolderNameInputDialog(prefill: string | undefined, confirmCallback: (arg: string) => void) {
+    const inputLabel = await vscode.window.showInputBox({
+        title: "Folder name",
+        value: prefill
+    });
+
+    // all folders must have name
+    if (!inputLabel)
+        return;
+
+    confirmCallback(inputLabel);
+}
+
+export function moveUp(item: treeview.DirectoryTreeItem) {
+    moveUpDown(item, "up");
+}
+
+export function moveDown(item: treeview.DirectoryTreeItem) {
+    moveUpDown(item, "down");
+}
+
+function moveUpDown(item: treeview.DirectoryTreeItem, direction: "up" | "down") {
+    const connData = common.getConnData();
+    const parentDirData = connData.directories.get(treeview.getDirId(item.parentDir))!.dirIds;
+    const newIndex = item.entryIndex + (direction === "up" ? -1 : 1);
+    // basic bound check
+    if (newIndex < 0 || newIndex >= parentDirData.length) {
+        return;
+    }
+    // swap!
+    const swp = parentDirData[item.entryIndex];
+    parentDirData[item.entryIndex] = parentDirData[newIndex];
+    parentDirData[newIndex] = swp;
+    commonTreeviewUpdate(item.parentDir);
+}
+
+export function connect(
+    item: treeview.RemoteTreeItem | treeview.RecentRemoteTreeItem,
+    reuseWindow: boolean
+) {
+    return commands.connectAuthority(item.remoteInfo.authority, reuseWindow);
+}
+
+/**
+ * Convenience hunction to trigger Memento update + update the treeview.
+ * @param parentDir If specified, only the items in this argument will be updated instead of the whole treeview.
+ */
+async function commonTreeviewUpdate(parentDir: treeview.DirectoryTreeItem | undefined) {
+    await common.updateConnData();
+    treeview.remoteManagerDataProvider.refresh(parentDir);
 }

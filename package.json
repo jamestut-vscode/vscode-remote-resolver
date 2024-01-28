@@ -2,7 +2,7 @@
   "name": "vscode-remote-resolver",
   "displayName": "VSCode REH Connector",
   "description": "Connect to a VSCode REH (Remote Host Extension).",
-  "version": "0.3.3",
+  "version": "0.4.0-pre.3",
   "publisher": "jamestut",
   "license": "MIT",
   "enabledApiProposals": [
@@ -23,8 +23,7 @@
     "vscode:publish": "vsce package"
   },
   "activationEvents": [
-    "onResolveRemoteAuthority:tcpreh",
-    "onView:remoteResolverManagerView"
+    "onResolveRemoteAuthority:tcpreh"
   ],
   "main": "./out/extension",
   "devDependencies": {
@@ -83,17 +82,25 @@
         "command": "remote-resolver.currentWindow"
       },
       {
+        "title": "Connect in New Window",
+        "command": "remote-resolver.manager.connectNewWindow"
+      },
+      {
+        "title": "Connect in Current Window",
+        "command": "remote-resolver.manager.connectCurrentWindow"
+      },
+      {
         "title": "New Remote",
         "icon": "$(add)",
         "command": "remote-resolver.manager.add"
       },
       {
-        "title": "New Remote from Recent Connection",
+        "title": "Create New Remote from Recent",
         "icon": "$(add)",
         "command": "remote-resolver.manager.addRecent"
       },
       {
-        "title": "Modify",
+        "title": "Modify Remote",
         "icon": "$(pencil)",
         "command": "remote-resolver.manager.edit"
       },
@@ -101,17 +108,42 @@
         "title": "Delete Remote",
         "icon": "$(trash)",
         "command": "remote-resolver.manager.remove"
+      },
+      {
+        "title": "New Folder",
+        "icon": "$(new-folder)",
+        "command": "remote-resolver.manager.addFolder"
+      },
+      {
+        "title": "Rename Folder",
+        "icon": "$(pencil)",
+        "command": "remote-resolver.manager.renameFolder"
+      },
+      {
+        "title": "Delete Folder",
+        "icon": "$(trash)",
+        "command": "remote-resolver.manager.removeFolder"
+      },
+      {
+        "title": "Move Up",
+        "icon": "$(arrow-up)",
+        "command": "remote-resolver.manager.moveUp"
+      },
+      {
+        "title": "Move Down",
+        "icon": "$(arrow-down)",
+        "command": "remote-resolver.manager.moveDown"
       }
     ],
     "menus": {
       "statusBar/remoteIndicator": [
         {
           "command": "remote-resolver.newWindow",
-          "group": "remote_90_tcpreh_1_local@2"
+          "group": "remote_90_tcpreh_1_local@1"
         },
         {
           "command": "remote-resolver.currentWindow",
-          "group": "remote_90_tcpreh_1_local@1"
+          "group": "remote_90_tcpreh_1_local@2"
         }
       ],
       "view/title": [
@@ -119,23 +151,78 @@
           "command": "remote-resolver.manager.add",
           "when": "view == remoteResolverManagerView",
           "group": "navigation"
+        },
+        {
+          "command": "remote-resolver.manager.addFolder",
+          "when": "view == remoteResolverManagerView",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
         {
-          "command": "remote-resolver.manager.remove",
-          "when": "view == remoteResolverManagerView && viewItem == remoteItem",
-          "group": "inline@2"
+          "command": "remote-resolver.manager.addRecent",
+          "when": "view == remoteResolverManagerView && viewItem == remoteItemRecent",
+          "group": "g2"
         },
         {
           "command": "remote-resolver.manager.edit",
           "when": "view == remoteResolverManagerView && viewItem == remoteItem",
+          "group": "g1@1"
+        },
+        {
+          "command": "remote-resolver.manager.remove",
+          "when": "view == remoteResolverManagerView && viewItem == remoteItem",
+          "group": "g1@2"
+        },
+        {
+          "command": "remote-resolver.manager.connectNewWindow",
+          "when": "view == remoteResolverManagerView && viewItem =~ /^remoteItem(Recent)?$/",
+          "group": "c@1"
+        },
+        {
+          "command": "remote-resolver.manager.connectCurrentWindow",
+          "when": "view == remoteResolverManagerView && viewItem =~ /^remoteItem(Recent)?$/",
+          "group": "c@2"
+        },
+        {
+          "command": "remote-resolver.manager.add",
+          "when": "view == remoteResolverManagerView && viewItem =~ /^remoteItemDir/",
+          "group": "g1"
+        },
+        {
+          "command": "remote-resolver.manager.addFolder",
+          "when": "view == remoteResolverManagerView && viewItem =~ /^remoteItemDir/",
+          "group": "g2"
+        },
+        {
+          "command": "remote-resolver.manager.renameFolder",
+          "when": "view == remoteResolverManagerView && viewItem =~ /^remoteItemDir/",
+          "group": "g3@1"
+        },
+        {
+          "command": "remote-resolver.manager.removeFolder",
+          "when": "view == remoteResolverManagerView && viewItem =~ /^remoteItemDir/",
+          "group": "g3@2"
+        },
+        {
+          "command": "remote-resolver.manager.moveUp",
+          "when": "view == remoteResolverManagerView && viewItem =~ /^remoteItemDir_/",
           "group": "inline@1"
         },
         {
-          "command": "remote-resolver.manager.addRecent",
-          "when": "view == remoteResolverManagerView && viewItem == remoteItemRecent",
-          "group": "inline"
+          "command": "remote-resolver.manager.moveDown",
+          "when": "view == remoteResolverManagerView && viewItem =~ /^remoteItemDir_/",
+          "group": "inline@2"
+        },
+        {
+          "command": "remote-resolver.manager.moveUp",
+          "when": "view == remoteResolverManagerView && viewItem =~ /^remoteItemDir.*_up/",
+          "group": "g4@1"
+        },
+        {
+          "command": "remote-resolver.manager.moveDown",
+          "when": "view == remoteResolverManagerView && viewItem =~ /^remoteItemDir.*_down/",
+          "group": "g4@2"
         }
       ]
     }

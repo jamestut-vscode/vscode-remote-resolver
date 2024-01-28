@@ -8,7 +8,7 @@
 		"sourceMap": true
 	},
 	"include": [
-		"./src/**/*",
+		"./src/**/*.ts",
 		"./vscode-dts/vscode.d.ts",
 		"./vscode-dts/vscode.proposed.resolvers.d.ts"
 	]
