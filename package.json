@@ -2,7 +2,7 @@
   "name": "vscode-remote-resolver",
   "displayName": "VSCode REH Connector",
   "description": "Connect to a VSCode REH (Remote Host Extension).",
-  "version": "0.4.0-pre.4",
+  "version": "0.4.1",
   "publisher": "jamestut",
   "license": "MIT",
   "enabledApiProposals": [
@@ -223,6 +223,48 @@
           "command": "remote-resolver.manager.moveDown",
           "when": "view == remoteResolverManagerView && viewItem =~ /^remoteItemDir.*_down/",
           "group": "g4@2"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "remote-resolver.manager.connectNewWindow",
+          "when": "false"
+        },
+        {
+          "command": "remote-resolver.manager.connectCurrentWindow",
+          "when": "false"
+        },
+        {
+          "command": "remote-resolver.manager.addRecent",
+          "when": "false"
+        },
+        {
+          "command": "remote-resolver.manager.edit",
+          "when": "false"
+        },
+        {
+          "command": "remote-resolver.manager.remove",
+          "when": "false"
+        },
+        {
+          "command": "remote-resolver.manager.addFolder",
+          "when": "false"
+        },
+        {
+          "command": "remote-resolver.manager.renameFolder",
+          "when": "false"
+        },
+        {
+          "command": "remote-resolver.manager.removeFolder",
+          "when": "false"
+        },
+        {
+          "command": "remote-resolver.manager.moveUp",
+          "when": "false"
+        },
+        {
+          "command": "remote-resolver.manager.moveDown",
+          "when": "false"
         }
       ]
     }
