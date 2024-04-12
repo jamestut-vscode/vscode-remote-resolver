@@ -41,8 +41,9 @@ class RemoteManagerDataProvider implements vscode.TreeDataProvider<vscode.TreeIt
 		} else {
 			// This is root element.
 			// we have a special item here: recent connection
-			const recentRemoteInfo = common.RemoteInfo.fromJSON(dataStor.get(common.RECENT_CONN_KEY));
-			if (recentRemoteInfo) {
+			const recentRemoteInfoData = dataStor.get(common.RECENT_CONN_KEY);
+			if (recentRemoteInfoData) {
+				const recentRemoteInfo = common.RemoteInfo.fromJSON(recentRemoteInfoData);
 				ret.push(new RecentRemoteTreeItem(recentRemoteInfo));
 			}
 		}
@@ -154,7 +155,7 @@ class RemoteManagerDragProvider implements vscode.TreeDragAndDropController<vsco
 				}
 			}
 		}
-		
+
 		// let's do the reparenting
 		refreshReq.add(item.parentDir);
 		refreshReq.add(newParent);
@@ -183,7 +184,7 @@ class RemoteManagerDragProvider implements vscode.TreeDragAndDropController<vsco
 
 		const parentDirInfo = connData.directories.get(getDirId(target.parentDir))!;
 		const targetList = getAppropriateList(target, parentDirInfo);
-		
+
 		if (this.#maybeReparent(source, target.parentDir, refreshReq)) {
 			// maybeReparent doesn't update the source's index if reparenting happened,
 			// thus we need to infer it by our own

@@ -4,7 +4,8 @@ import { dataStor } from './extension';
 
 // the command to manually connect to REH instance
 export async function connectCommand(reuseWindow: boolean) {
-    let recentConnInfo = common.RemoteInfo.fromJSON(dataStor.get(common.RECENT_CONN_KEY));
+    const recentConnInfoData = dataStor.get(common.RECENT_CONN_KEY);
+    const recentConnInfo = recentConnInfoData ? common.RemoteInfo.fromJSON(recentConnInfoData) : undefined;
     const inputAddr = await vscode.window.showInputBox({
         title: "Enter remote target (only TCP is supported)",
         placeHolder: "hostname:port(:connectionToken)",
