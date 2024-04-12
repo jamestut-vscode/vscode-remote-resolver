@@ -47,6 +47,16 @@ An example for the `IDENTIFIER` would be:
 - `server-darwin-arm64` for use with macOS on Apple Silicon.
 - `server-linux-x64` for use with Linux on x86_64.
 
+### Running on Official VSCode Builds
+
+Since this extension uses the "proposed" `resolver` API, VSCode by default will not allow this extension to run. Open the `~/.vscode/argv.json` and add the following entry:
+
+```
+{
+    "enable-proposed-api": ["jamestut.vscode-remote-resolver"]
+}
+```
+
 ## Building
 
 1. Clone this repository.
