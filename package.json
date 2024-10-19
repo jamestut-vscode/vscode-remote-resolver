@@ -2,7 +2,7 @@
   "name": "vscode-remote-resolver",
   "displayName": "VSCode REH Connector",
   "description": "Connect to a VSCode REH (Remote Host Extension).",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "publisher": "jamestut",
   "license": "MIT",
   "enabledApiProposals": [
@@ -10,26 +10,23 @@
   ],
   "private": true,
   "engines": {
-    "vscode": "^1.75.0"
+    "vscode": "^1.93.0"
   },
   "icon": "media/icon.png",
   "extensionKind": [
     "ui"
   ],
   "scripts": {
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "vscode:prepublish": "npm run compile",
-    "vscode:publish": "vsce package"
+    "compile": "npx gulp compile-extension:vscode-remote-resolver",
+    "watch": "npx gulp watch-extension:vscode-remote-resolver"
   },
   "activationEvents": [
     "onResolveRemoteAuthority:tcpreh"
   ],
   "main": "./out/extension",
   "devDependencies": {
-    "@types/node": "16.x",
-    "@vscode/vsce": "^2.18.0",
-    "typescript": "^4.9.4"
+    "@types/node": "^20",
+    "typescript": "^5"
   },
   "capabilities": {
     "untrustedWorkspaces": {
