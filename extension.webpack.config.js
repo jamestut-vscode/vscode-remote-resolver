@@ -3,8 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-//@ts-check
-
 'use strict';
 
 const withDefaults = require('../shared.webpack.config');
@@ -17,6 +15,6 @@ module.exports = withDefaults({
 	},
 	output: {
 		filename: 'extension.js',
-		path: path.join(__dirname, 'out')
+		path: path.join(__dirname, 'dist')
 	}
 });
