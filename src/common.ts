@@ -10,6 +10,7 @@ const CONNMGR_DATA_VERSION_KEY = "version";
 const CURR_CONNMGR_DATA_VERSION = 1;
 
 const labelRe = /^[a-zA-Z0-9\-\. ]+$/
+const tokenRe = /^[a-zA-Z0-9\-]+$/
 
 // caching for getConnData
 let currGenId: number = -1;
@@ -34,6 +35,7 @@ export class RemoteInfo {
 			this.displayLabel = label;
 		}
 		if (connectionToken) {
+			RemoteInfo.checkTokenValid(connectionToken);
 			this.authority = [this.authority, connectionToken].join(":")
 		}
 		fullAuthComp.push(this.authority);
@@ -54,6 +56,14 @@ export class RemoteInfo {
 		if (!labelRe.test(label)) {
 			throw new Error("Invalid label. Label must consist of \
 				alphanumerical, space, dash, or dot characters only.")
+		}
+	}
+
+	static checkTokenValid(token: string | undefined | null) {
+		if(!token) return;
+		if (!tokenRe.test(token)) {
+			throw new Error("Invalid token. Tokens can only consist of \
+				alphanumerical or dash characters only.")
 		}
 	}
 
