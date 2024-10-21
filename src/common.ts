@@ -9,6 +9,8 @@ const CONNMGR_DATA_KEY = "connectionData";
 const CONNMGR_DATA_VERSION_KEY = "version";
 const CURR_CONNMGR_DATA_VERSION = 1;
 
+const labelRe = /^[a-zA-Z0-9\-\. ]+$/
+
 // caching for getConnData
 let currGenId: number = -1;
 let currConnData: ContainerInfo;
@@ -27,6 +29,7 @@ export class RemoteInfo {
 		const fullAuthComp: string[] = ["tcpreh"];
 		this.displayLabel = this.authority = [host, port].join(":");
 		if (label) {
+			RemoteInfo.checkLabelValid(label);
 			fullAuthComp.push(label);
 			this.displayLabel = label;
 		}
@@ -43,6 +46,14 @@ export class RemoteInfo {
 			port: this.port,
 			label: this.label,
 			connectionToken: this.connectionToken
+		}
+	}
+
+	static checkLabelValid(label: string | undefined | null) {
+		if(!label) return;
+		if (!labelRe.test(label)) {
+			throw new Error("Invalid label. Label must consist of \
+				alphanumerical, space, dash, or dot characters only.")
 		}
 	}
 
