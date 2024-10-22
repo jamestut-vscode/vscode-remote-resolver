@@ -225,7 +225,7 @@ export class RemoteTreeItem extends vscode.TreeItem {
 		super(remoteInfo.displayLabel, vscode.TreeItemCollapsibleState.None);
 
 		this.tooltip = remoteInfo.displayLabel;
-		this.description = remoteInfo.label ? [remoteInfo.host, remoteInfo.port].join(":") : "";
+		this.description = remoteInfo.label ? remoteInfo.description : "";
 
 		if (remoteInfo.connectionToken) {
 			this.iconPath = new vscode.ThemeIcon('vm-active');

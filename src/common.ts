@@ -9,8 +9,9 @@ const CONNMGR_DATA_KEY = "connectionData";
 const CONNMGR_DATA_VERSION_KEY = "version";
 const CURR_CONNMGR_DATA_VERSION = 1;
 
-const labelRe = /^[a-zA-Z0-9\-\. ]+$/
-const tokenRe = /^[a-zA-Z0-9\-]+$/
+const labelRe = /^[\w\-\. ]+$/;
+const tokenRe = /^[\w\-]+$/;
+const addressRe = /^([\w\-\.]+|\[[\da-fA-F:]+\])(:\d{1,5})(:[\w\-]+)?$/;
 
 // caching for getConnData
 let currGenId: number = -1;
@@ -18,6 +19,7 @@ let currConnData: ContainerInfo;
 
 export class RemoteInfo {
 	public readonly displayLabel: string;
+	public readonly description: string;
 	public readonly authority: string;
 	public readonly fullAuthority: string;
 
@@ -28,7 +30,11 @@ export class RemoteInfo {
 		public readonly connectionToken?: string
 	) {
 		const fullAuthComp: string[] = ["tcpreh"];
-		this.displayLabel = this.authority = [host, port].join(":");
+		if (host.indexOf(":") >= 0) {
+			// IPv6 address
+			host = `[${host}]`;
+		}
+		this.description = this.displayLabel = this.authority = [host, port].join(":");
 		if (label) {
 			RemoteInfo.checkLabelValid(label);
 			fullAuthComp.push(label);
@@ -55,7 +61,7 @@ export class RemoteInfo {
 		if(!label) return;
 		if (!labelRe.test(label)) {
 			throw new Error("Invalid label. Label must consist of \
-				alphanumerical, space, dash, or dot characters only.")
+				alphanumerical, space, dash, or dot characters only")
 		}
 	}
 
@@ -63,7 +69,7 @@ export class RemoteInfo {
 		if(!token) return;
 		if (!tokenRe.test(token)) {
 			throw new Error("Invalid token. Tokens can only consist of \
-				alphanumerical or dash characters only.")
+				alphanumerical or dash characters only")
 		}
 	}
 
@@ -73,35 +79,30 @@ export class RemoteInfo {
 
 	static fromAddress(address: string, label?: string): RemoteInfo {
 		address = address.trim();
-		if (!address.length) {
-			throw new Error("Host is undefined");
+		const match = address.match(addressRe);
+		if (!match) {
+			throw new Error("Invalid address specification");
 		}
-		const sa = address.split(":");
-		if (sa.length < 2) {
-			throw new Error("Port number is undefined");
-		}
-
-		let port: string;
 		let host: string;
+		let port: string;
 		let connectionToken: string | undefined;
-		switch (sa.length) {
-			case 2:
-				[host, port] = sa;
-				break;
-			case 3:
-				[host, port, connectionToken] = sa;
-				break;
-			default:
-				// more than 3
-				[port, connectionToken] = sa.slice(-2);
-				host = sa.slice(0, -2).join(':');
-				break;
+		[, host, port, connectionToken] = match;
+
+		if (host.charAt(0) === '[') {
+			// IPv6 address
+			host = host.slice(1, -1);
 		}
 
-		const portNum = parseInt(port);
+		const portNum = parseInt(port.substring(1));
 		if (Number.isNaN(portNum) || portNum < 1 || portNum > 0xFFFF) {
 			throw new Error("Invalid port number");
 		}
+
+		if (connectionToken) {
+			// remove the leading ':'
+			connectionToken = connectionToken.slice(1);
+		}
+
 		return new RemoteInfo(host, portNum, label, connectionToken);
 	}
 
