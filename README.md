@@ -15,3 +15,21 @@ This extension is bundled in my [customized version of VSCode](https://github.co
 - Start the VSCode server on the remote host. The VSCode server has to be of the exact same version and commit hash as the local VSCode instance.
 - This extension's commands are available under the **REH Resolver** group name. Use one of those commands to connect to a VSCode REH instance via TCP/IP.
 - Alternatively, click the remote host indicator on the bottom left to list and open commands exclusively from remote connector extensions.
+
+## Remote Specifications
+
+The **remote address** must be defined in the following format:
+
+```
+(host):(port):[connection token]
+```
+
+The connection token is optional and can be omitted. IPv6 host addresses have to be enclosed with square brackets (`[]`).
+
+**Tokens** must consist of alphanumeric only.
+
+For **remote labels**, only these characters are allowed:
+
+- Alphanumeric
+- Space
+- Dash "-" and dot ".".
