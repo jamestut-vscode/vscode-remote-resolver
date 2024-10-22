@@ -60,13 +60,13 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.manager.renameFolder',
         treeviewCommands.remoteManagerRenameDir));
 
-    context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.manager.removeFolder', 
+    context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.manager.removeFolder',
         treeviewCommands.remoteManagerRemoveDir));
 
-    context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.manager.moveUp', 
+    context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.manager.moveUp',
         treeviewCommands.moveUp));
 
-    context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.manager.moveDown', 
+    context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.manager.moveDown',
         treeviewCommands.moveDown));
 }
 
