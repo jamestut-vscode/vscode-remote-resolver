@@ -56,10 +56,7 @@ class RemoteManagerDataProvider implements vscode.TreeDataProvider<vscode.TreeIt
 				const chldDirId = dirInfo.dirIds[i];
 				const chldDir = connData.directories.get(chldDirId);
 				if (chldDir) {
-					const canMoveUp = i > 0;
-					const canMoveDown = i < (dirInfo.dirIds.length - 1);
-					ret.push(new DirectoryTreeItem(chldDir.label, i, chldDirId, parentElement,
-						canMoveUp, canMoveDown));
+					ret.push(new DirectoryTreeItem(chldDir.label, i, chldDirId, parentElement));
 				}
 			}
 
@@ -261,17 +258,11 @@ export class DirectoryTreeItem extends vscode.TreeItem {
 		label: string,
 		public readonly entryIndex: number,
 		public readonly entryId: string,
-		public readonly parentDir: DirectoryTreeItem | undefined,
-		public readonly canMoveUp: boolean,
-		public readonly canMoveDown: boolean
+		public readonly parentDir: DirectoryTreeItem | undefined
 	) {
 		super(label, vscode.TreeItemCollapsibleState.Collapsed);
 
 		const contextVal = ['remoteItemDir'];
-		if (canMoveUp)
-			contextVal.push('up');
-		if (canMoveDown)
-			contextVal.push('down');
 		this.contextValue = contextVal.join('_');
 	}
 }

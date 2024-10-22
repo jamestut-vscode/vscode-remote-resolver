@@ -158,29 +158,6 @@ async function commonFolderNameInputDialog(prefill: string | undefined, confirmC
     confirmCallback(inputLabel);
 }
 
-export function moveUp(item: treeview.DirectoryTreeItem) {
-    moveUpDown(item, "up");
-}
-
-export function moveDown(item: treeview.DirectoryTreeItem) {
-    moveUpDown(item, "down");
-}
-
-function moveUpDown(item: treeview.DirectoryTreeItem, direction: "up" | "down") {
-    const connData = common.getConnData();
-    const parentDirData = connData.directories.get(treeview.getDirId(item.parentDir))!.dirIds;
-    const newIndex = item.entryIndex + (direction === "up" ? -1 : 1);
-    // basic bound check
-    if (newIndex < 0 || newIndex >= parentDirData.length) {
-        return;
-    }
-    // swap!
-    const swp = parentDirData[item.entryIndex];
-    parentDirData[item.entryIndex] = parentDirData[newIndex];
-    parentDirData[newIndex] = swp;
-    commonTreeviewUpdate(item.parentDir);
-}
-
 export function connect(
     item: treeview.RemoteTreeItem | treeview.RecentRemoteTreeItem,
     reuseWindow: boolean
