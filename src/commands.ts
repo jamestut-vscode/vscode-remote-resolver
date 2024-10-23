@@ -28,6 +28,25 @@ export async function connectCommand(reuseWindow: boolean) {
 }
 
 export function connectAuthority(remoteInfo: common.RemoteInfo, reuseWindow: boolean) {
-    return vscode.commands.executeCommand('vscode.newWindow',
-        { remoteAuthority: remoteInfo.fullAuthority, reuseWindow });
+    const doConnect = () => {
+        vscode.commands.executeCommand('vscode.newWindow',
+            { remoteAuthority: remoteInfo.fullAuthority, reuseWindow });
+    }
+
+    if (reuseWindow) {
+        const cfg = vscode.workspace.getConfiguration();
+        const prompt = cfg.get("remote-resolver.promptConnectCurrentWindow");
+        if (prompt) {
+            vscode.window.showInformationMessage(
+                `Replace current window with remote connection to ${remoteInfo.displayLabel}?`,
+                { "modal": true }, "Yes").then((answer) => {
+                    if (answer === "Yes") {
+                        doConnect();
+                    }
+                });
+            return;
+        }
+    }
+
+    doConnect();
 }
