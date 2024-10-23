@@ -20,6 +20,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
     dataStor = context.globalState;
 
+    vscode.commands.executeCommand('setContext', 'forwardedPortsViewEnabled', true);
+
     await common.maybeUpgradeConnData();
 
     // preload data so that common.currConnData is never undefined
