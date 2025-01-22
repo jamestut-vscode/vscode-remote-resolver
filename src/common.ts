@@ -219,20 +219,31 @@ export function genId(kind: "dir" | "remote", contInfo: ContainerInfo = currConn
 
 export async function maybeUpgradeConnData() {
 	const dataVer = dataStor.get<number>(CONNMGR_DATA_VERSION_KEY, 0);
-	if (dataVer == CURR_CONNMGR_DATA_VERSION) {
-		// perform sanitation only
-		getConnData();
-		if (!currConnData.directories.has("root")) {
-			currConnData.directories.set("root", new DirectoryInfo("root"));
-			await updateConnData();
-		}
-		return;
-	} else if (dataVer > CURR_CONNMGR_DATA_VERSION) {
+	if (dataVer > CURR_CONNMGR_DATA_VERSION) {
 		console.error(`Stored data version ${dataVer} is unsupported.`);
 		return;
 	}
 
-	// upgrade from version 0 to version 1
+	switch (dataVer) {
+		case 0:
+			connDataUpgrade0();
+			break;
+	}
+
+	maybeAssignRootDirectory();
+}
+
+async function maybeAssignRootDirectory() {
+	getConnData();
+	if (!currConnData.directories.has("root")) {
+		currConnData.directories.set("root", new DirectoryInfo("root"));
+		await updateConnData();
+	}
+}
+
+async function connDataUpgrade0() {
+	// upgrade from version 0 to 1
+	console.warn(`Upgrading data version 0 to 1 ...`);
 	const oldRemotes = dataStor.get<any[]>(CONNMGR_DATA_KEY, []);
 
 	currConnData = new ContainerInfo();
@@ -244,6 +255,6 @@ export async function maybeUpgradeConnData() {
 	const rootDir = new DirectoryInfo("root", undefined, [...currConnData.remotes.keys()]);
 	currConnData.directories.set("root", rootDir);
 
-	await dataStor.update(CONNMGR_DATA_VERSION_KEY, CURR_CONNMGR_DATA_VERSION);
+	await dataStor.update(CONNMGR_DATA_VERSION_KEY, 1);
 	await updateConnData();
 }

@@ -9,15 +9,12 @@ import * as authority from './authority';
 import * as commands from './commands';
 import * as treeview from './treeview';
 import * as treeviewCommands from './treeviewCommands';
-// import { MockFileMemento } from './mocks/memento';
 
 export let dataStor: vscode.Memento;
-
-let extContext: vscode.ExtensionContext;
+export let extContext: vscode.ExtensionContext;
 
 export async function activate(context: vscode.ExtensionContext) {
     extContext = context;
-
     dataStor = context.globalState;
 
     vscode.commands.executeCommand('setContext', 'forwardedPortsViewEnabled', true);
