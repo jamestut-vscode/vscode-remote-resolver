@@ -6,7 +6,7 @@ import * as commands from './commands';
 export async function remoteManagerEditOrAdd(
     remoteItem: treeview.DirectoryTreeItem | treeview.RemoteTreeItem | treeview.RecentRemoteTreeItem | undefined
 ) {
-    const connData = common.getConnData();
+    const connData = await common.getConnData();
     let remoteToEdit: common.RemoteInfo | undefined = undefined;
     let parentDirId: string;
     if (remoteItem instanceof treeview.DirectoryTreeItem) {
@@ -62,8 +62,8 @@ export async function remoteManagerEditOrAdd(
     commonTreeviewUpdate(remoteItem?.parentDir);
 }
 
-export function remoteManagerRemoveRemote(remoteItem: treeview.RemoteTreeItem) {
-    const connData = common.getConnData();
+export async function remoteManagerRemoveRemote(remoteItem: treeview.RemoteTreeItem) {
+    const connData = await common.getConnData();
     const parentDirId = treeview.getDirId(remoteItem.parentDir);
     const parentDirInfo = connData.directories.get(parentDirId)!;
     const remoteInfo = connData.remotes.get(remoteItem.entryId)!;
@@ -75,8 +75,8 @@ export function remoteManagerRemoveRemote(remoteItem: treeview.RemoteTreeItem) {
     });
 }
 
-export function remoteManagerRemoveDir(dirItem: treeview.DirectoryTreeItem) {
-    const connData = common.getConnData();
+export async function remoteManagerRemoveDir(dirItem: treeview.DirectoryTreeItem) {
+    const connData = await common.getConnData();
     const parentDirInfo = connData.directories.get(treeview.getDirId(dirItem.parentDir))!;
 
     commonDeleteConfirmDialog(`Confirm delete '${dirItem.label}' and all of its entries`, () => {
@@ -86,8 +86,8 @@ export function remoteManagerRemoveDir(dirItem: treeview.DirectoryTreeItem) {
     });
 }
 
-function removeDirRecursive(dirId: string) {
-    const connData = common.getConnData();
+async function removeDirRecursive(dirId: string) {
+    const connData = await common.getConnData();
     const rmDirInfo = connData.directories.get(dirId)!;
 
     for (const chldRemoteId of rmDirInfo.remoteIds) {
@@ -124,20 +124,20 @@ function commonDeleteConfirmDialog(msg: string, confirmCallback: () => void) {
 
 export function remoteManagerRenameDir(dirItem: treeview.DirectoryTreeItem) {
     const currName = dirItem.label?.toString();
-    commonFolderNameInputDialog(currName, (newName) => {
+    commonFolderNameInputDialog(currName, async (newName) => {
         if (newName === currName) {
             return;
         }
-        const connData = common.getConnData();
+        const connData = await common.getConnData();
         connData.directories.get(dirItem.entryId)!.label = newName;
         commonTreeviewUpdate(dirItem.parentDir);
     })
 }
 
 export function remoteManagerAddDir(parentDir: treeview.DirectoryTreeItem | undefined) {
-    commonFolderNameInputDialog(undefined, (newName) => {
+    commonFolderNameInputDialog(undefined, async (newName) => {
         const parentDirId = treeview.getDirId(parentDir);
-        const connData = common.getConnData();
+        const connData = await common.getConnData();
         const newDirId = common.genId("dir");
         connData.directories.set(newDirId, new common.DirectoryInfo(newName));
         connData.directories.get(parentDirId)!.dirIds.push(newDirId);

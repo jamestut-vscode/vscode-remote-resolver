@@ -22,7 +22,7 @@ export async function activate(context: vscode.ExtensionContext) {
     await common.maybeUpgradeConnData();
 
     // preload data so that common.currConnData is never undefined
-    common.getConnData();
+    await common.getConnData();
 
     treeview.initializeTreeView();
 

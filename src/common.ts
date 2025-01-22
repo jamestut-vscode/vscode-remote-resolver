@@ -1,20 +1,26 @@
-import { dataStor } from './extension';
+import * as vscode from 'vscode';
+import { extContext, dataStor } from './extension';
 
 export const RECENT_CONN_KEY = "recentConnDetails";
 export const CONNMGR_DATA_GENID_KEY = "connectionDataGenId";
 
-const CONNMGR_DATA_KEY = "connectionData";
+const CONNDATA_FILENAME = "remotes.json";
+const CONNMGR_DATA_KEY_LEGACY = "connectionData";
 
 // internal data versioning
 const CONNMGR_DATA_VERSION_KEY = "version";
-const CURR_CONNMGR_DATA_VERSION = 1;
+const CURR_CONNMGR_DATA_VERSION = 2;
 
 const labelRe = /^[\w\-\. ]+$/;
 const tokenRe = /^[\w\-]+$/;
 const addressRe = /^([\w\-\.]+|\[[\da-fA-F:]+\])(:\d{1,5})(:[\w\-]+)?$/;
 
+// vscode's file accessor for extension
+const wsfs = vscode.workspace.fs;
+
 // caching for getConnData
 let currGenId: number = -1;
+let connDataFilePath: vscode.Uri | undefined;
 let currConnData: ContainerInfo;
 
 export class RemoteInfo {
@@ -58,7 +64,7 @@ export class RemoteInfo {
 	}
 
 	static checkLabelValid(label: string | undefined | null) {
-		if(!label) return;
+		if (!label) return;
 		if (!labelRe.test(label)) {
 			throw new Error("Invalid label. Label must consist of \
 				alphanumerical, space, dash, or dot characters only")
@@ -66,7 +72,7 @@ export class RemoteInfo {
 	}
 
 	static checkTokenValid(token: string | undefined | null) {
-		if(!token) return;
+		if (!token) return;
 		if (!tokenRe.test(token)) {
 			throw new Error("Invalid token. Tokens can only consist of \
 				alphanumerical or dash characters only")
@@ -184,20 +190,49 @@ export class ContainerInfo {
 }
 
 /**
- * Call this function to sync the in-memory storage to the underlying Memento storage
+ * Manage storage of connection data in globalStoragePath/remotes.json
+ */
+function populateConnDataFilePath() {
+	if (!connDataFilePath) {
+		connDataFilePath = vscode.Uri.joinPath(extContext.globalStorageUri, CONNDATA_FILENAME);
+	}
+}
+
+async function readConnData(): Promise<ContainerInfo> {
+	populateConnDataFilePath();
+	let strData: string;
+	try {
+		const rawData = await wsfs.readFile(connDataFilePath!);
+		strData = new TextDecoder().decode(rawData);
+	} catch (err) {
+		console.error(`Error loading remote data: ${err}`);
+		strData = "";
+	}
+	return strData.length ? ContainerInfo.fromJSON(JSON.parse(strData)) : new ContainerInfo();
+}
+
+async function writeConnData(connData: ContainerInfo): Promise<any> {
+	populateConnDataFilePath();
+	const rawData = new TextEncoder().encode(JSON.stringify(connData));
+	await wsfs.writeFile(connDataFilePath!, rawData);
+}
+
+/**
+ * Call this function to sync the in-memory storage to the underlying storage
  */
 export async function updateConnData() {
 	const genId = dataStor.get<number>(CONNMGR_DATA_GENID_KEY, 0);
 	currGenId = (genId + 1) % 0xFFFF;
 	await dataStor.update(CONNMGR_DATA_GENID_KEY, currGenId);
-	await dataStor.update(CONNMGR_DATA_KEY, currConnData);
+	await writeConnData(currConnData);
 }
 
-export function getConnData(): ContainerInfo {
+export async function getConnData(): Promise<ContainerInfo> {
 	const gsGenId = dataStor.get<number>(CONNMGR_DATA_GENID_KEY, 0);
 	if (currConnData === undefined || gsGenId !== currGenId) {
-		const sData = dataStor.get<any>(CONNMGR_DATA_KEY);
-		currConnData = sData ? ContainerInfo.fromJSON(sData) : new ContainerInfo();
+		currConnData = await readConnData();
+		await maybeAssignRootDirectory();
+		currGenId = gsGenId;
 	}
 	return currConnData;
 }
@@ -226,15 +261,14 @@ export async function maybeUpgradeConnData() {
 
 	switch (dataVer) {
 		case 0:
-			connDataUpgrade0();
+			await connDataUpgrade0();
+		case 1:
+			await connDataUpgrade1();
 			break;
 	}
-
-	maybeAssignRootDirectory();
 }
 
 async function maybeAssignRootDirectory() {
-	getConnData();
 	if (!currConnData.directories.has("root")) {
 		currConnData.directories.set("root", new DirectoryInfo("root"));
 		await updateConnData();
@@ -243,8 +277,8 @@ async function maybeAssignRootDirectory() {
 
 async function connDataUpgrade0() {
 	// upgrade from version 0 to 1
-	console.warn(`Upgrading data version 0 to 1 ...`);
-	const oldRemotes = dataStor.get<any[]>(CONNMGR_DATA_KEY, []);
+	console.warn("Upgrading data version 0 to 1 ...");
+	const oldRemotes = dataStor.get<any[]>(CONNMGR_DATA_KEY_LEGACY, []);
 
 	currConnData = new ContainerInfo();
 	for (const remote of oldRemotes) {
@@ -256,5 +290,17 @@ async function connDataUpgrade0() {
 	currConnData.directories.set("root", rootDir);
 
 	await dataStor.update(CONNMGR_DATA_VERSION_KEY, 1);
-	await updateConnData();
+	await dataStor.update(CONNMGR_DATA_KEY_LEGACY, currConnData);
+}
+
+async function connDataUpgrade1() {
+	// upgrade from version 1 to 2
+	console.warn("Upgrading data version 1 to 2 ...");
+	currConnData = dataStor.get<any>(CONNMGR_DATA_KEY_LEGACY);
+	if (currConnData) {
+		await writeConnData(ContainerInfo.fromJSON(currConnData));
+	} else {
+		currConnData = new ContainerInfo();
+	}
+	await dataStor.update(CONNMGR_DATA_VERSION_KEY, 2);
 }
