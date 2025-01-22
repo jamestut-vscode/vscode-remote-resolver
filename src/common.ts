@@ -253,7 +253,13 @@ export function genId(kind: "dir" | "remote", contInfo: ContainerInfo = currConn
 }
 
 export async function maybeUpgradeConnData() {
-	const dataVer = dataStor.get<number>(CONNMGR_DATA_VERSION_KEY, 0);
+	const dataVer = dataStor.get<number>(CONNMGR_DATA_VERSION_KEY);
+	if (dataVer === undefined) {
+		// initialize with a new blank settings instead
+		await dataStor.update(CONNMGR_DATA_VERSION_KEY, CURR_CONNMGR_DATA_VERSION);
+		return;
+	}
+
 	if (dataVer > CURR_CONNMGR_DATA_VERSION) {
 		console.error(`Stored data version ${dataVer} is unsupported.`);
 		return;
