@@ -9,7 +9,8 @@ export async function connectCommand(reuseWindow: boolean) {
     const inputAddr = await vscode.window.showInputBox({
         title: "Enter remote target (only TCP is supported)",
         placeHolder: "hostname:port(:connectionToken)",
-        value: recentConnInfo?.authority
+        value: recentConnInfo?.authority,
+        validateInput: common.validateRemoteInput
     });
     if (!inputAddr)
         return;

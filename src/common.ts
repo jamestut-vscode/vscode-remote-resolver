@@ -13,7 +13,7 @@ const CURR_CONNMGR_DATA_VERSION = 2;
 
 const labelRe = /^[\w\-\. ]+$/;
 const tokenRe = /^[\w\-]+$/;
-const addressRe = /^([\w\-\.]+|\[[\da-fA-F:]+\])(:\d{1,5})(:[\w\-]+)?$/;
+const addressRe = /^([\w\-\.]+|\[[\da-fA-F:]+\])(:\d{1,5})(:[^:]+)?$/;
 
 // vscode's file accessor for extension
 const wsfs = vscode.workspace.fs;
@@ -84,7 +84,9 @@ export class RemoteInfo {
 	}
 
 	static fromAddress(address: string, label?: string): RemoteInfo {
-		address = address.trim();
+		if (/(^\s|\s$)/.test(address)) {
+			throw new Error("Blank spaces are not allowed");
+		}
 		const match = address.match(addressRe);
 		if (!match) {
 			throw new Error("Invalid address specification");
@@ -186,6 +188,31 @@ export class ContainerInfo {
 			"directories": Object.fromEntries(this.directories),
 			"remotes": Object.fromEntries(this.remotes)
 		}
+	}
+}
+
+/**
+ * Input validators
+ */
+
+export function validateRemoteInput(value: string): string | undefined {
+	if (!value) {
+		return "Empty remote";
+	}
+	try {
+		RemoteInfo.fromAddress(value);
+		return;
+	} catch (err) {
+		return err.message;
+	}
+}
+
+export function validateLabel(label: string): string | undefined {
+	try {
+		RemoteInfo.checkLabelValid(label);
+		return;
+	} catch (err) {
+		return err.message;
 	}
 }
 

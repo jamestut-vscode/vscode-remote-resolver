@@ -24,7 +24,8 @@ export async function remoteManagerEditOrAdd(
     const inputAddr = await vscode.window.showInputBox({
         title: "Add remote address",
         placeHolder: "hostname:port(:connectionToken)",
-        value: remoteToEdit?.authority
+        value: remoteToEdit?.authority,
+        validateInput: common.validateRemoteInput
     });
     if (!inputAddr)
         return;
@@ -32,7 +33,8 @@ export async function remoteManagerEditOrAdd(
     let inputLabel = await vscode.window.showInputBox({
         title: "Enter nickname (optional)",
         placeHolder: "nickname",
-        value: remoteToEdit?.label
+        value: remoteToEdit?.label,
+        validateInput: common.validateLabel
     });
     if (inputLabel === undefined) {
         // user changed their mind while entering the nickname
