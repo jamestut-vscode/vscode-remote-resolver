@@ -25,7 +25,8 @@ export async function remoteManagerEditOrAdd(
         title: "Add remote address",
         placeHolder: "hostname:port(:connectionToken)",
         value: remoteToEdit?.authority,
-        validateInput: common.validateRemoteInput
+        validateInput: common.validateRemoteInput,
+        ignoreFocusOut: true
     });
     if (!inputAddr)
         return;
@@ -34,7 +35,8 @@ export async function remoteManagerEditOrAdd(
         title: "Enter nickname (optional)",
         placeHolder: "nickname",
         value: remoteToEdit?.label,
-        validateInput: common.validateLabel
+        validateInput: common.validateLabel,
+        ignoreFocusOut: true
     });
     if (inputLabel === undefined) {
         // user changed their mind while entering the nickname

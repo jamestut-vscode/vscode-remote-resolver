@@ -10,7 +10,8 @@ export async function connectCommand(reuseWindow: boolean) {
         title: "Enter remote target (only TCP is supported)",
         placeHolder: "hostname:port(:connectionToken)",
         value: recentConnInfo?.authority,
-        validateInput: common.validateRemoteInput
+        validateInput: common.validateRemoteInput,
+        ignoreFocusOut: true
     });
     if (!inputAddr)
         return;
