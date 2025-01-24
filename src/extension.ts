@@ -9,6 +9,7 @@ import * as authority from './authority';
 import * as commands from './commands';
 import * as treeview from './treeview';
 import * as treeviewCommands from './treeviewCommands';
+import * as quickPick from './quickPick';
 
 export let dataStor: vscode.Memento;
 export let extContext: vscode.ExtensionContext;
@@ -35,6 +36,10 @@ export async function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.currentWindow', async () => {
         return await commands.connectCommand(true);
+    }));
+
+    context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.quickPickRemote', async () => {
+        return await quickPick.quickPickCommand();
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.manager.connectNewWindow', async (arg) => {

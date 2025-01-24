@@ -79,6 +79,11 @@
         "command": "remote-resolver.currentWindow"
       },
       {
+        "title": "Open Saved Remote",
+        "category": "REH Connector",
+        "command": "remote-resolver.quickPickRemote"
+      },
+      {
         "title": "Connect in New Window",
         "icon": "$(empty-window)",
         "command": "remote-resolver.manager.connectNewWindow"
@@ -133,6 +138,10 @@
         {
           "command": "remote-resolver.currentWindow",
           "group": "remote_90_tcpreh_1_local@2"
+        },
+        {
+          "command": "remote-resolver.quickPickRemote",
+          "group": "remote_90_tcpreh_1_local@3"
         }
       ],
       "view/title": [
