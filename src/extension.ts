@@ -52,20 +52,20 @@ export async function activate(context: vscode.ExtensionContext) {
 
     for (const cmdId of ['remote-resolver.manager.add', 'remote-resolver.manager.addRecent', 'remote-resolver.manager.edit']) {
         context.subscriptions.push(vscode.commands.registerCommand(cmdId,
-            treeviewCommands.remoteManagerEditOrAdd));
+            treeviewCommands.remoteManagerEditOrAddCommand));
     }
 
     context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.manager.remove',
-        treeviewCommands.remoteManagerRemoveRemote));
+        treeviewCommands.remoteManagerRemoveRemoteCommand));
 
     context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.manager.addFolder',
-        treeviewCommands.remoteManagerAddDir));
+        treeviewCommands.remoteManagerAddDirCommand));
 
     context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.manager.renameFolder',
-        treeviewCommands.remoteManagerRenameDir));
+        treeviewCommands.remoteManagerRenameDirCommand));
 
     context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.manager.removeFolder',
-        treeviewCommands.remoteManagerRemoveDir));
+        treeviewCommands.remoteManagerRemoveDirCommand));
 }
 
 export function getContext(): vscode.ExtensionContext {

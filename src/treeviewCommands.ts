@@ -3,7 +3,7 @@ import * as common from './common';
 import * as treeview from './treeview';
 import * as commands from './commands';
 
-export async function remoteManagerEditOrAdd(
+export async function remoteManagerEditOrAddCommand(
     remoteItem: treeview.DirectoryTreeItem | treeview.RemoteTreeItem | treeview.RecentRemoteTreeItem | undefined
 ) {
     const connData = await common.getConnData();
@@ -66,7 +66,7 @@ export async function remoteManagerEditOrAdd(
     commonTreeviewUpdate(remoteItem?.parentDir);
 }
 
-export async function remoteManagerRemoveRemote(remoteItem: treeview.RemoteTreeItem) {
+export async function remoteManagerRemoveRemoteCommand(remoteItem: treeview.RemoteTreeItem) {
     const connData = await common.getConnData();
     const parentDirId = treeview.getDirId(remoteItem.parentDir);
     const parentDirInfo = connData.directories.get(parentDirId)!;
@@ -79,7 +79,7 @@ export async function remoteManagerRemoveRemote(remoteItem: treeview.RemoteTreeI
     });
 }
 
-export async function remoteManagerRemoveDir(dirItem: treeview.DirectoryTreeItem) {
+export async function remoteManagerRemoveDirCommand(dirItem: treeview.DirectoryTreeItem) {
     const connData = await common.getConnData();
     const parentDirInfo = connData.directories.get(treeview.getDirId(dirItem.parentDir))!;
 
@@ -126,7 +126,7 @@ function commonDeleteConfirmDialog(msg: string, confirmCallback: () => void) {
     quickPick.show();
 }
 
-export function remoteManagerRenameDir(dirItem: treeview.DirectoryTreeItem) {
+export function remoteManagerRenameDirCommand(dirItem: treeview.DirectoryTreeItem) {
     const currName = dirItem.label?.toString();
     commonFolderNameInputDialog(currName, async (newName) => {
         if (newName === currName) {
@@ -138,7 +138,7 @@ export function remoteManagerRenameDir(dirItem: treeview.DirectoryTreeItem) {
     })
 }
 
-export function remoteManagerAddDir(parentDir: treeview.DirectoryTreeItem | undefined) {
+export function remoteManagerAddDirCommand(parentDir: treeview.DirectoryTreeItem | undefined) {
     commonFolderNameInputDialog(undefined, async (newName) => {
         const parentDirId = treeview.getDirId(parentDir);
         const connData = await common.getConnData();
