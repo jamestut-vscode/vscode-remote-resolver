@@ -192,31 +192,6 @@ export class ContainerInfo {
 }
 
 /**
- * Input validators
- */
-
-export function validateRemoteInput(value: string): string | undefined {
-	if (!value) {
-		return "Empty remote";
-	}
-	try {
-		RemoteInfo.fromAddress(value);
-		return;
-	} catch (err) {
-		return err.message;
-	}
-}
-
-export function validateLabel(label: string): string | undefined {
-	try {
-		RemoteInfo.checkLabelValid(label);
-		return;
-	} catch (err) {
-		return err.message;
-	}
-}
-
-/**
  * Manage storage of connection data in globalStoragePath/remotes.json
  */
 function populateConnDataFilePath() {

@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as common from './common';
 import * as treeview from './treeview';
+import * as uihelper from './uihelper';
 import * as commands from './commands';
 
 export async function remoteManagerEditOrAddCommand(
@@ -21,27 +22,20 @@ export async function remoteManagerEditOrAddCommand(
         throw new Error(`Error retreiving directory info for '${parentDirId}'`);
     }
 
-    const inputAddr = await vscode.window.showInputBox({
-        title: "Add remote address",
-        placeHolder: "hostname:port(:connectionToken)",
-        value: remoteToEdit?.authority,
-        validateInput: common.validateRemoteInput,
-        ignoreFocusOut: true
-    });
-    if (!inputAddr)
-        return;
+    const inputAddr = await uihelper.promptRemoteInput(
+        remoteToEdit,
+        `${remoteToEdit ? "Edit" : "Add"} Remote Address`
+    );
+    if (inputAddr === undefined) return;
 
-    let inputLabel = await vscode.window.showInputBox({
-        title: "Enter nickname (optional)",
-        placeHolder: "nickname",
-        value: remoteToEdit?.label,
-        validateInput: common.validateLabel,
-        ignoreFocusOut: true
-    });
-    if (inputLabel === undefined) {
-        // user changed their mind while entering the nickname
-        return;
-    }
+    let inputLabel = await uihelper.promptLabelInput(
+        remoteToEdit,
+        !remoteToEdit ? "Edit Nickname" : undefined
+    );
+    // user changed their mind while entering the nickname
+    if (inputLabel === undefined) return;
+
+    // use default value if label is falsy but not undefined (e.g. empty string)
     if (!inputLabel)
         inputLabel = undefined;
 
@@ -72,7 +66,7 @@ export async function remoteManagerRemoveRemoteCommand(remoteItem: treeview.Remo
     const parentDirInfo = connData.directories.get(parentDirId)!;
     const remoteInfo = connData.remotes.get(remoteItem.entryId)!;
 
-    commonDeleteConfirmDialog(`Confirm delete '${remoteInfo.displayLabel}'`, () => {
+    uihelper.remoteDeleteConfirmDialog(remoteInfo, () => {
         parentDirInfo.remoteIds.splice(remoteItem.entryIndex, 1);
         connData.remotes.delete(remoteItem.entryId);
         commonTreeviewUpdate(remoteItem.parentDir);
@@ -83,11 +77,14 @@ export async function remoteManagerRemoveDirCommand(dirItem: treeview.DirectoryT
     const connData = await common.getConnData();
     const parentDirInfo = connData.directories.get(treeview.getDirId(dirItem.parentDir))!;
 
-    commonDeleteConfirmDialog(`Confirm delete '${dirItem.label}' and all of its entries`, () => {
-        parentDirInfo.dirIds.splice(dirItem.entryIndex, 1);
-        removeDirRecursive(dirItem.entryId);
-        commonTreeviewUpdate(dirItem.parentDir);
-    });
+    uihelper.commonDeleteConfirmDialog(
+        `Confirm delete '${dirItem.label}' and all of its entries`,
+        () => {
+            parentDirInfo.dirIds.splice(dirItem.entryIndex, 1);
+            removeDirRecursive(dirItem.entryId);
+            commonTreeviewUpdate(dirItem.parentDir);
+        }
+    );
 }
 
 async function removeDirRecursive(dirId: string) {
@@ -101,29 +98,6 @@ async function removeDirRecursive(dirId: string) {
         removeDirRecursive(chldDirId);
     }
     connData.directories.delete(dirId);
-}
-
-function commonDeleteConfirmDialog(msg: string, confirmCallback: () => void) {
-    const cancelLabel = 'Cancel';
-    if (msg === cancelLabel) {
-        throw Error("Invalid label");
-    }
-    const labels = [msg, cancelLabel];
-    const quickPick = vscode.window.createQuickPick();
-    quickPick.items = labels.map(label => ({ label }));
-    quickPick.onDidChangeSelection(selection => {
-        try {
-            if (!selection.length)
-                return;
-            if (selection[0].label === cancelLabel)
-                return;
-            confirmCallback();
-        } finally {
-            quickPick.hide();
-        }
-    });
-    quickPick.onDidHide(() => quickPick.dispose());
-    quickPick.show();
 }
 
 export function remoteManagerRenameDirCommand(dirItem: treeview.DirectoryTreeItem) {

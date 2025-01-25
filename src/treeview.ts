@@ -15,17 +15,13 @@ class RemoteManagerDataProvider implements vscode.TreeDataProvider<vscode.TreeIt
 		this._generationId = 0;
 	}
 
-	async updateConnData() {
-		this._connData = await common.getConnData();
-	}
-
-	refresh(dirToRefresh: DirectoryTreeItem | undefined = undefined) {
+	async refresh(dirToRefresh: DirectoryTreeItem | undefined = undefined) {
 		const newGenId = dataStor.get<number>(common.CONNMGR_DATA_GENID_KEY, 0);
-		if (newGenId == this._generationId) {
-			// nothing changed
-			return;
-		}
+		if (newGenId == this._generationId) return;
+
 		this._generationId = newGenId;
+		this._connData = await common.getConnData();
+
 		this._onDidChangeTreeData.fire(dirToRefresh);
 	}
 
@@ -295,15 +291,13 @@ export async function initializeTreeView() {
 	});
 
     // data might be modified from other window/view: refresh when view is focused
-	remoteResolverManagerView.onDidChangeVisibility(async (e) => {
+	remoteResolverManagerView.onDidChangeVisibility((e) => {
 		if (e.visible) {
-			await remoteManagerDataProvider.updateConnData();
 			remoteManagerDataProvider.refresh();
 		}
 	});
-	vscode.window.onDidChangeWindowState(async (e) => {
+	vscode.window.onDidChangeWindowState((e) => {
 		if (e.focused) {
-			await remoteManagerDataProvider.updateConnData();
 			remoteManagerDataProvider.refresh();
 		}
 	});

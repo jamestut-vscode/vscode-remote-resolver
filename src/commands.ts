@@ -1,18 +1,13 @@
 import * as vscode from 'vscode';
 import * as common from './common';
+import * as uihelper from './uihelper';
 import { dataStor } from './extension';
 
 // the command to manually connect to REH instance
 export async function connectCommand(reuseWindow: boolean) {
     const recentConnInfoData = dataStor.get(common.RECENT_CONN_KEY);
     const recentConnInfo = recentConnInfoData ? common.RemoteInfo.fromJSON(recentConnInfoData) : undefined;
-    const inputAddr = await vscode.window.showInputBox({
-        title: "Enter remote target (only TCP is supported)",
-        placeHolder: "hostname:port(:connectionToken)",
-        value: recentConnInfo?.authority,
-        validateInput: common.validateRemoteInput,
-        ignoreFocusOut: true
-    });
+    const inputAddr = await uihelper.promptRemoteInput(recentConnInfo);
     if (!inputAddr)
         return;
 
@@ -40,7 +35,7 @@ export function connectAuthority(remoteInfo: common.RemoteInfo, reuseWindow: boo
         const prompt = cfg.get("remote-resolver.promptConnectCurrentWindow");
         if (prompt) {
             vscode.window.showInformationMessage(
-                `Replace current window with remote connection to ${remoteInfo.displayLabel}?`,
+                `Replace current window with remote connection to '${remoteInfo.displayLabel}'?`,
                 { "modal": true }, "Yes").then((answer) => {
                     if (answer === "Yes") {
                         doConnect();

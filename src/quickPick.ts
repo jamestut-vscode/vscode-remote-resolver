@@ -1,15 +1,18 @@
 import * as vscode from 'vscode';
 import * as common from './common';
 import * as commands from './commands';
+import * as treeview from './treeview';
+import * as uihelper from './uihelper';
 import { dataStor } from './extension';
 
 interface ExtendedQuickPickItem extends vscode.QuickPickItem {
-    remoteInfo: common.RemoteInfo | undefined;
+    remoteId: string;
 }
 
 // if genId did not change, don't generate quickPickItems
 let genId: number | undefined;
 let quickPickItems: ExtendedQuickPickItem[] | undefined;
+let connData: common.ContainerInfo | undefined;
 
 function generateFlatRemotes(nfo: common.ContainerInfo): ExtendedQuickPickItem[] {
     interface DirInfo {
@@ -21,7 +24,7 @@ function generateFlatRemotes(nfo: common.ContainerInfo): ExtendedQuickPickItem[]
     // perform breadth first search
     // curDir[parent, display path name, dirId]
     let queuedDirs: DirInfo[] = [
-        {displayName: "", dirId: "root"}
+        { displayName: "", dirId: "root" }
     ];
     while (queuedDirs.length) {
         const curDir = queuedDirs.shift()!;
@@ -36,7 +39,7 @@ function generateFlatRemotes(nfo: common.ContainerInfo): ExtendedQuickPickItem[]
                 return {
                     label: `${curDir.displayName}${remoteInfo?.displayLabel || "(error)"}`,
                     detail: remoteInfo?.description || "(broken directory entry)",
-                    remoteInfo: remoteInfo
+                    remoteId: remoteId
                 };
             }
         ));
@@ -59,7 +62,8 @@ export async function quickPickCommand() {
     if (genId != newGenId || quickPickItems === undefined) {
         // refresh is needed: regenerate the QP items
         genId = newGenId;
-        quickPickItems = generateFlatRemotes(await common.getConnData());
+        connData = await common.getConnData();
+        quickPickItems = generateFlatRemotes(connData);
     }
     const qp = vscode.window.createQuickPick<ExtendedQuickPickItem>();
     qp.items = quickPickItems;
@@ -75,42 +79,75 @@ export async function quickPickCommand() {
     qp.show();
 }
 
+async function askUpdate() {
+    await common.updateConnData();
+    treeview.remoteManagerDataProvider.refresh();
+}
+
 async function quickPicked(picked: ExtendedQuickPickItem) {
-    const remoteInfo = picked.remoteInfo;
-    interface CmdQuickPickItem extends vscode.QuickPickItem {
-        command?: (r: common.RemoteInfo) => void;
+    const remoteId = picked.remoteId;
+    const remoteInfo = connData?.remotes.get(picked.remoteId);
+
+    if (remoteInfo === undefined) {
+        vscode.window.showErrorMessage("Remote data not found. Database might be corrupted.");
+        return;
     }
-    const cmd = await vscode.window.showQuickPick<CmdQuickPickItem>([
+
+    interface CmdQuickPickItem extends vscode.QuickPickItem {
+        command?: () => void | Promise<void>;
+    }
+
+    const quickPickCommands = [
         {
             label: "Connect",
             kind: vscode.QuickPickItemKind.Separator
         },
         {
             label: "Connect in Current Window",
-            command: (x: common.RemoteInfo) => {commands.connectAuthority(x, true)}
+            command: () => { commands.connectAuthority(remoteInfo, true) }
         },
         {
             label: "Connect in New Window",
-            command: (x: common.RemoteInfo) => {commands.connectAuthority(x, false)}
+            command: () => { commands.connectAuthority(remoteInfo, false) }
+        },
+        {
+            label: "Manage",
+            kind: vscode.QuickPickItemKind.Separator
+        },
+        {
+            label: "Modify Remote",
+            command: async () => {
+                const newAddr = await uihelper.promptRemoteInput(remoteInfo);
+                if (newAddr === undefined) return;
+                const newLabel = await uihelper.promptLabelInput(remoteInfo);
+                if (newLabel === undefined) return;
+
+                connData!.remotes.set(
+                    remoteId,
+                    common.RemoteInfo.fromAddress(newAddr, newLabel)
+                );
+                askUpdate();
+            }
+        },
+        {
+            label: "Delete Remote",
+            command: () => {
+                uihelper.remoteDeleteConfirmDialog(remoteInfo, () => {
+                    connData!.remotes.delete(remoteId);
+                    askUpdate();
+                });
+            }
         }
-        // {
-        //     label: "Manage",
-        //     kind: vscode.QuickPickItemKind.Separator
-        // },
-        // {
-        //     label: "Modify Remote",
-        //     command: // TODO
-        // },
-        // {
-        //     label: "Delete Remote",
-        //     command: // TODO
-        // }
-    ],
-    {
-        title: remoteInfo?.displayLabel,
-        canPickMany: false
-    });
-    if (cmd && cmd.command && remoteInfo) {
-        cmd.command(remoteInfo);
+    ];
+
+    const cmd = await vscode.window.showQuickPick<CmdQuickPickItem>(
+        quickPickCommands,
+        {
+            title: remoteInfo.displayLabel,
+            canPickMany: false
+        }
+    );
+    if (cmd && cmd.command) {
+        cmd.command();
     }
 }
