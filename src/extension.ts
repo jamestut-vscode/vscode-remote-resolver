@@ -27,7 +27,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     treeview.initializeTreeView();
 
-    context.subscriptions.push(vscode.workspace.registerRemoteAuthorityResolver('tcpreh',
+    context.subscriptions.push(vscode.workspace.registerRemoteAuthorityResolver('jra',
         new authority.AuthorityResolver()));
 
     context.subscriptions.push(vscode.commands.registerCommand('remote-resolver.newWindow', async () => {

@@ -11,7 +11,7 @@ function doResolve(authority: string): vscode.ManagedResolvedAuthority {
     context.subscriptions.push(vscode.workspace.registerResourceLabelFormatter(
         {
             scheme: "vscode-remote",
-            authority: "tcpreh+*",
+            authority: "jra+*",
             formatting: {
                 label: "${path}",
                 separator: "/",

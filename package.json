@@ -2,7 +2,7 @@
   "name": "vscode-remote-resolver",
   "displayName": "VSCode REH Connector",
   "description": "Connect to a VSCode REH (Remote Host Extension).",
-  "version": "0.6.0-e1",
+  "version": "0.6.0-e2",
   "publisher": "jamestut",
   "license": "MIT",
   "enabledApiProposals": [
@@ -21,7 +21,7 @@
     "watch": "npx gulp watch-extension:vscode-remote-resolver"
   },
   "activationEvents": [
-    "onResolveRemoteAuthority:tcpreh"
+    "onResolveRemoteAuthority:jra"
   ],
   "main": "./out/extension",
   "devDependencies": {
@@ -38,7 +38,7 @@
     "resourceLabelFormatters": [
       {
         "scheme": "vscode-remote",
-        "authority": "tcpreh+*",
+        "authority": "jra+*",
         "formatting": {
           "label": "${path}",
           "separator": "/",
@@ -133,15 +133,15 @@
       "statusBar/remoteIndicator": [
         {
           "command": "remote-resolver.newWindow",
-          "group": "remote_90_tcpreh_1_local@1"
+          "group": "remote_90_jra_1_local@1"
         },
         {
           "command": "remote-resolver.currentWindow",
-          "group": "remote_90_tcpreh_1_local@2"
+          "group": "remote_90_jra_1_local@2"
         },
         {
           "command": "remote-resolver.quickPickRemote",
-          "group": "remote_90_tcpreh_1_local@3"
+          "group": "remote_90_jra_1_local@3"
         }
       ],
       "view/title": [

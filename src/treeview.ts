@@ -73,8 +73,8 @@ class RemoteManagerDataProvider implements vscode.TreeDataProvider<vscode.TreeIt
 }
 
 class RemoteManagerDragProvider implements vscode.TreeDragAndDropController<vscode.TreeItem> {
-	dropMimeTypes: readonly string[] = ['application/vnd.code.tree.tcprehmanager'];
-	dragMimeTypes: readonly string[] = ['application/vnd.code.tree.tcprehmanager'];
+	dropMimeTypes: readonly string[] = ['application/vnd.code.tree.jramanager'];
+	dragMimeTypes: readonly string[] = ['application/vnd.code.tree.jramanager'];
 
 	private itemToMove: RemoteTreeItem | DirectoryTreeItem | undefined = undefined;
 

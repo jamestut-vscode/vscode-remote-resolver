@@ -35,7 +35,7 @@ export class RemoteInfo {
 		public readonly label?: string,
 		public readonly connectionToken?: string
 	) {
-		const fullAuthComp: string[] = ["tcpreh"];
+		const fullAuthComp: string[] = ["jra"];
 		if (host.indexOf(":") >= 0) {
 			// IPv6 address
 			host = `[${host}]`;
@@ -119,8 +119,8 @@ export class RemoteInfo {
 		let labelOrAddress: string | undefined;
 		let address: string;
 		[protocol, labelOrAddress, address] = fullAuth.split("+", 3);
-		if (protocol != 'tcpreh') {
-			throw new Error("Protocol is not 'tcpreh'");
+		if (protocol != 'jra') {
+			throw new Error("Protocol is not 'jra'");
 		}
 		if (!address) {
 			address = labelOrAddress;
