@@ -5,7 +5,6 @@ export const RECENT_CONN_KEY = "recentConnDetails";
 export const CONNMGR_DATA_GENID_KEY = "connectionDataGenId";
 
 const CONNDATA_FILENAME = "remotes.json";
-const CONNMGR_DATA_KEY_LEGACY = "connectionData";
 
 // internal data versioning
 const CONNMGR_DATA_VERSION_KEY = "version";
@@ -163,7 +162,7 @@ export class RemoteInfo {
 
 	static fromJSON(obj: any): RemoteInfo {
 		let transportinfo: TransportInfo;
-		switch(obj.transport) {
+		switch (obj.transport) {
 			case TransportMethod.TCP:
 				transportinfo = TcpTransportInfo.fromJSON(obj.transportinfo);
 				break;
@@ -241,7 +240,7 @@ function populateConnDataFilePath() {
 	}
 }
 
-async function readConnData(): Promise<ContainerInfo> {
+async function readConnDataRaw(): Promise<string> {
 	populateConnDataFilePath();
 	let strData: string;
 	try {
@@ -251,6 +250,11 @@ async function readConnData(): Promise<ContainerInfo> {
 		console.error(`Error loading remote data: ${err}`);
 		strData = "";
 	}
+	return strData;
+}
+
+async function readConnData(): Promise<ContainerInfo> {
+	const strData = await readConnDataRaw();
 	return strData.length ? ContainerInfo.fromJSON(JSON.parse(strData)) : new ContainerInfo();
 }
 
@@ -268,6 +272,13 @@ export async function updateConnData() {
 	currGenId = (genId + 1) % 0xFFFF;
 	await dataStor.update(CONNMGR_DATA_GENID_KEY, currGenId);
 	await writeConnData(currConnData);
+}
+
+async function maybeAssignRootDirectory() {
+	if (!currConnData.directories.has("root")) {
+		currConnData.directories.set("root", new DirectoryInfo("root"));
+		await updateConnData();
+	}
 }
 
 export async function getConnData(): Promise<ContainerInfo> {
@@ -296,6 +307,9 @@ export function genId(kind: "dir" | "remote", contInfo: ContainerInfo = currConn
 }
 
 export async function maybeUpgradeConnData() {
+	// version that we support upgrading from
+	const MINIMUM_SUPPORTED_VERSION = 2;
+
 	const dataVer = dataStor.get<number>(CONNMGR_DATA_VERSION_KEY);
 	if (dataVer === undefined) {
 		// initialize with a new blank settings instead
@@ -304,59 +318,58 @@ export async function maybeUpgradeConnData() {
 	}
 
 	if (dataVer > CURR_CONNMGR_DATA_VERSION) {
-		console.error(`Stored data version ${dataVer} is unsupported.`);
-		return;
+		throw new Error(`Stored data version ${dataVer} is unsupported: ` +
+			"it came from a newer version of this app.");
+	}
+
+	if (dataVer < MINIMUM_SUPPORTED_VERSION) {
+	// if (true) {
+		const rs = await vscode.window.showWarningMessage(
+			"Data version is too old. " +
+			"Click 'Yes' to reset data or 'No' to stop loading this extension.",
+			"Yes", "No");
+		if (rs === 'Yes') {
+			dataStor.update(CONNMGR_DATA_VERSION_KEY, CURR_CONNMGR_DATA_VERSION);
+			writeConnData(new ContainerInfo());
+			return;
+		} else {
+			vscode.window.showInformationMessage(
+				"Older version of this app can be used to upgrade to supported version. " +
+				"See documentation or release notes for more details.");
+			throw new Error("Data version is too old.");
+		}
 	}
 
 	switch (dataVer) {
-		case 0:
-			await connDataUpgrade0();
-		case 1:
-			await connDataUpgrade1();
 		case 2:
 			await connDataUpgrade2();
 			break;
 	}
 }
 
-async function maybeAssignRootDirectory() {
-	if (!currConnData.directories.has("root")) {
-		currConnData.directories.set("root", new DirectoryInfo("root"));
-		await updateConnData();
-	}
-}
-
-async function connDataUpgrade0() {
-	// upgrade from version 0 to 1
-	console.warn("Upgrading data version 0 to 1 ...");
-	const oldRemotes = dataStor.get<any[]>(CONNMGR_DATA_KEY_LEGACY, []);
-
-	currConnData = new ContainerInfo();
-	for (const remote of oldRemotes) {
-		const newRemote = new RemoteInfo(remote.host, remote.port, remote.label, remote.connectionToken);
-		currConnData.remotes.set(genId("remote", currConnData), newRemote);
-	}
-
-	const rootDir = new DirectoryInfo("root", undefined, [...currConnData.remotes.keys()]);
-	currConnData.directories.set("root", rootDir);
-
-	await dataStor.update(CONNMGR_DATA_VERSION_KEY, 1);
-	await dataStor.update(CONNMGR_DATA_KEY_LEGACY, currConnData);
-}
-
-async function connDataUpgrade1() {
-	// upgrade from version 1 to 2
-	console.warn("Upgrading data version 1 to 2 ...");
-	currConnData = dataStor.get<any>(CONNMGR_DATA_KEY_LEGACY);
-	if (currConnData) {
-		await writeConnData(ContainerInfo.fromJSON(currConnData));
-	} else {
-		currConnData = new ContainerInfo();
-	}
-	await dataStor.update(CONNMGR_DATA_VERSION_KEY, 2);
-}
-
 async function connDataUpgrade2() {
 	// upgrade from version 2 to 3
-	// TODO
+	console.warn("Upgrading data version 2 to 3 ...");
+	dataStor.update(CONNMGR_DATA_VERSION_KEY, 3);
+
+	const strData = await readConnDataRaw();
+	if (!strData.length) return;
+	
+	const jsonData = JSON.parse(strData);
+	let remotes = jsonData.remotes as { [index: string]: any };
+	for (const remoteId in remotes) {
+		const remoteObj = remotes[remoteId];
+		// old version always uses TCP
+		remotes[remoteId] = {
+			"transport": "tcp",
+			"transportinfo": {
+				"host": remoteObj.host,
+				"port": remoteObj.port,
+			},
+			"label": remoteObj.label,
+			"connectionToken": remoteObj.connectionToken
+		}
+	}
+
+	await writeConnData(ContainerInfo.fromJSON(jsonData));
 }
