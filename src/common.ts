@@ -323,7 +323,6 @@ export async function maybeUpgradeConnData() {
 	}
 
 	if (dataVer < MINIMUM_SUPPORTED_VERSION) {
-	// if (true) {
 		const rs = await vscode.window.showWarningMessage(
 			"Data version is too old. " +
 			"Click 'Yes' to reset data or 'No' to stop loading this extension.",
