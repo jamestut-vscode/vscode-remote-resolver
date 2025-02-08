@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as common from './common';
+import * as remoteParse from './remoteParse';
 import * as commands from './commands';
 import * as treeview from './treeview';
 import * as uihelper from './uihelper';
@@ -119,12 +120,13 @@ async function quickPicked(picked: ExtendedQuickPickItem) {
             command: async () => {
                 const newAddr = await uihelper.promptRemoteInput(remoteInfo);
                 if (newAddr === undefined) return;
-                const newLabel = await uihelper.promptLabelInput(remoteInfo);
+                let newLabel = await uihelper.promptLabelInput(remoteInfo);
                 if (newLabel === undefined) return;
+                if (!newLabel) newLabel = undefined;
 
                 connData!.remotes.set(
                     remoteId,
-                    common.RemoteInfo.fromAddress(newAddr, newLabel)
+                    remoteParse.remoteFromAddress(newAddr, newLabel)
                 );
                 askUpdate();
             }

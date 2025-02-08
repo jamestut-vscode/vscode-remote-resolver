@@ -1,12 +1,13 @@
 import * as vscode from 'vscode';
 import * as common from './common';
+import * as remoteParse from './remoteParse';
 
 export function validateRemoteInput(value: string): string | undefined {
     if (!value) {
         return "Empty remote";
     }
     try {
-        common.RemoteInfo.fromAddress(value);
+        remoteParse.remoteFromAddress(value);
         return;
     } catch (err) {
         return err.message;
@@ -19,14 +20,16 @@ export async function promptRemoteInput(
 ) {
     return await vscode.window.showInputBox({
         title: title || "Enter Remote Target (TCP)",
-        placeHolder: "hostname:port(:connectionToken)",
-        value: remoteToEdit?.authority,
+        placeHolder: "transport+address(+connection token)",
+        value: remoteToEdit?.address,
         validateInput: validateRemoteInput,
         ignoreFocusOut: true
     });
 }
 
-export function validateLabel(label: string): string | undefined {
+export function validateLabel(label: string | undefined): string | undefined {
+    // empty input is empty string
+    if (!label) return;
     try {
         common.RemoteInfo.checkLabelValid(label);
         return;

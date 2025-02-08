@@ -9,11 +9,10 @@ const CONNMGR_DATA_KEY_LEGACY = "connectionData";
 
 // internal data versioning
 const CONNMGR_DATA_VERSION_KEY = "version";
-const CURR_CONNMGR_DATA_VERSION = 2;
+const CURR_CONNMGR_DATA_VERSION = 3;
 
 const labelRe = /^[\w\-\. ]+$/;
 const tokenRe = /^[\w\-]+$/;
-const addressRe = /^([\w\-\.]+|\[[\da-fA-F:]+\])(:\d{1,5})(:[^:]+)?$/;
 
 // vscode's file accessor for extension
 const wsfs = vscode.workspace.fs;
@@ -23,56 +22,139 @@ let currGenId: number = -1;
 let connDataFilePath: vscode.Uri | undefined;
 let currConnData: ContainerInfo;
 
-export class RemoteInfo {
-	public readonly displayLabel: string;
-	public readonly description: string;
-	public readonly authority: string;
-	public readonly fullAuthority: string;
+export enum TransportMethod {
+	TCP = "tcp",
+	UDS = "uds",
+	PIPE = "pipe",
+}
+
+export const SupportedTransportMethod = new Set<string>(Object.values(TransportMethod));
+
+export interface TransportInfo {
+	readonly authorityPart: string;
+
+	toJSON(): any;
+}
+
+export class TcpTransportInfo implements TransportInfo {
+	public readonly authorityPart: string;
 
 	constructor(
 		public readonly host: string,
 		public readonly port: number,
-		public readonly label?: string,
-		public readonly connectionToken?: string
 	) {
-		const fullAuthComp: string[] = ["jra"];
+		if (!host.length) {
+			throw new Error("Host part is empty");
+		}
+
 		if (host.indexOf(":") >= 0) {
 			// IPv6 address
-			host = `[${host}]`;
+			if (!host.startsWith('[') && !host.endsWith(']')) {
+				host = `[${host}]`;
+			}
 		}
-		this.description = this.displayLabel = this.authority = [host, port].join(":");
-		if (label) {
-			RemoteInfo.checkLabelValid(label);
-			fullAuthComp.push(label);
-			this.displayLabel = label;
+
+		if (port < 0 || port > 0xFFFF) {
+			throw new Error("Invalid port number");
 		}
-		if (connectionToken) {
-			RemoteInfo.checkTokenValid(connectionToken);
-			this.authority = [this.authority, connectionToken].join(":")
+
+		this.authorityPart = [host, port].join(":");
+	}
+
+	static fromAddress(addrComponent: string): TcpTransportInfo {
+		const spltIndex = addrComponent.lastIndexOf(':');
+		if (spltIndex < 0) {
+			throw new Error("Address must consists of hostname and port number");
 		}
-		fullAuthComp.push(this.authority);
-		this.fullAuthority = fullAuthComp.join("+");
+		const hostPart = addrComponent.substring(0, spltIndex);
+		const portPart = parseInt(addrComponent.substring(spltIndex + 1));
+		if (isNaN(portPart)) {
+			throw new Error("Port must be an integer");
+		}
+		return new TcpTransportInfo(hostPart, portPart);
+	}
+
+	static fromJSON(obj: any): TransportInfo {
+		return new TcpTransportInfo(obj.host, obj.port);
 	}
 
 	toJSON() {
 		return {
 			host: this.host,
-			port: this.port,
+			port: this.port
+		}
+	}
+}
+
+export class RemoteInfo {
+	public readonly displayLabel: string;
+	public readonly description: string;
+	// fullAuthority is for passing around to "vscode-remote://"
+	public readonly fullAuthority: string;
+	// address is for user input. It is "transportMethod+authorityPart"
+	public readonly address: string;
+
+	constructor(
+		public readonly transport: TransportMethod,
+		public readonly transportinfo: TransportInfo,
+		public readonly label?: string,
+		public readonly connectionToken?: string
+	) {
+		// "jra"+transport method+encodeURIComponent(authorityPart)+connection token+label
+		const fullAuthComp: string[] = ["jra", transport];
+		// transport method+authorityPart+connection token
+		const addressComp: string[] = [transport];
+
+		addressComp.push(transportinfo.authorityPart);
+		fullAuthComp.push(encodeURIComponent(transportinfo.authorityPart));
+
+		if (connectionToken !== undefined) {
+			RemoteInfo.checkTokenValid(connectionToken);
+			fullAuthComp.push(connectionToken);
+			addressComp.push(connectionToken);
+		} else {
+			// empty string connection token for fullAuthority only (not address)
+			fullAuthComp.push("");
+		}
+
+		// transport method+authorityPart
+		this.description = this.displayLabel =
+			[transport, transportinfo.authorityPart].join("+");
+		if (label) {
+			RemoteInfo.checkLabelValid(label);
+			fullAuthComp.push(label);
+			this.displayLabel = label;
+		}
+
+		this.fullAuthority = fullAuthComp.join("+");
+		this.address = addressComp.join("+");
+	}
+
+	toJSON() {
+		return {
+			transport: this.transport,
+			transportinfo: this.transportinfo,
 			label: this.label,
 			connectionToken: this.connectionToken
 		}
 	}
 
-	static checkLabelValid(label: string | undefined | null) {
-		if (!label) return;
+	static checkLabelValid(label: string | undefined) {
+		if (label === undefined) return;
+		if (!label.length) {
+			throw new Error("Label is empty");
+		}
 		if (!labelRe.test(label)) {
 			throw new Error("Invalid label. Label must consist of \
 				alphanumerical, space, dash, or dot characters only")
 		}
 	}
 
-	static checkTokenValid(token: string | undefined | null) {
-		if (!token) return;
+	static checkTokenValid(token: string | undefined) {
+		if (token === undefined) return;
+		if (!token.length) {
+			throw new Error("Token is empty");
+		}
 		if (!tokenRe.test(token)) {
 			throw new Error("Invalid token. Tokens can only consist of \
 				alphanumerical or dash characters only")
@@ -80,56 +162,15 @@ export class RemoteInfo {
 	}
 
 	static fromJSON(obj: any): RemoteInfo {
-		return new RemoteInfo(obj.host, obj.port, obj.label, obj.connectionToken);
-	}
-
-	static fromAddress(address: string, label?: string): RemoteInfo {
-		if (/(^\s|\s$)/.test(address)) {
-			throw new Error("Blank spaces are not allowed");
+		let transportinfo: TransportInfo;
+		switch(obj.transport) {
+			case TransportMethod.TCP:
+				transportinfo = TcpTransportInfo.fromJSON(obj.transportinfo);
+				break;
+			default:
+				throw new Error("Transport method is not supported");
 		}
-		const match = address.match(addressRe);
-		if (!match) {
-			throw new Error("Invalid address specification");
-		}
-		let host: string;
-		let port: string;
-		let connectionToken: string | undefined;
-		[, host, port, connectionToken] = match;
-
-		if (host.charAt(0) === '[') {
-			// IPv6 address
-			host = host.slice(1, -1);
-		}
-
-		const portNum = parseInt(port.substring(1));
-		if (Number.isNaN(portNum) || portNum < 1 || portNum > 0xFFFF) {
-			throw new Error("Invalid port number");
-		}
-
-		if (connectionToken) {
-			// remove the leading ':'
-			connectionToken = connectionToken.slice(1);
-		}
-
-		return new RemoteInfo(host, portNum, label, connectionToken);
-	}
-
-	static fromFullAuthority(fullAuth: string): RemoteInfo {
-		let protocol: string;
-		let labelOrAddress: string | undefined;
-		let address: string;
-		[protocol, labelOrAddress, address] = fullAuth.split("+", 3);
-		if (protocol != 'jra') {
-			throw new Error("Protocol is not 'jra'");
-		}
-		if (!address) {
-			address = labelOrAddress;
-			labelOrAddress = undefined;
-		}
-		if (!address) {
-			throw new Error("Unknown address");
-		}
-		return RemoteInfo.fromAddress(address, labelOrAddress);
+		return new RemoteInfo(obj.transport, transportinfo, obj.label, obj.connectionToken);
 	}
 }
 
@@ -272,6 +313,8 @@ export async function maybeUpgradeConnData() {
 			await connDataUpgrade0();
 		case 1:
 			await connDataUpgrade1();
+		case 2:
+			await connDataUpgrade2();
 			break;
 	}
 }
@@ -311,4 +354,9 @@ async function connDataUpgrade1() {
 		currConnData = new ContainerInfo();
 	}
 	await dataStor.update(CONNMGR_DATA_VERSION_KEY, 2);
+}
+
+async function connDataUpgrade2() {
+	// upgrade from version 2 to 3
+	// TODO
 }

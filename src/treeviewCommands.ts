@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as common from './common';
+import * as remoteParse from './remoteParse';
 import * as treeview from './treeview';
 import * as uihelper from './uihelper';
 import * as commands from './commands';
@@ -41,7 +42,7 @@ export async function remoteManagerEditOrAddCommand(
 
     let newRemoteInfo: common.RemoteInfo;
     try {
-        newRemoteInfo = common.RemoteInfo.fromAddress(inputAddr, inputLabel);
+        newRemoteInfo = remoteParse.remoteFromAddress(inputAddr, inputLabel);
     } catch (err) {
         vscode.window.showErrorMessage(err.message);
         return;

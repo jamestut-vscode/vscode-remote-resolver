@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as common from './common';
+import * as remoteParse from './remoteParse';
 import * as uihelper from './uihelper';
 import { dataStor } from './extension';
 
@@ -12,7 +13,7 @@ export async function connectCommand(reuseWindow: boolean) {
         return;
 
     // check if supplied authority string is valid
-    let currConnInfo = common.RemoteInfo.fromAddress(inputAddr);
+    let currConnInfo = remoteParse.remoteFromAddress(inputAddr);
     try {
         const remoteInfo = currConnInfo;
         dataStor.update(common.RECENT_CONN_KEY, remoteInfo);

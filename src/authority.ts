@@ -1,11 +1,12 @@
 import * as vscode from 'vscode';
 import * as common from './common';
+import * as remoteParse from './remoteParse';
 import { getContext } from './extension';
 import * as tcpTransport from './transport/tcp';
 
 // remote authority resolver
 function doResolve(authority: string): vscode.ManagedResolvedAuthority {
-    const remoteInfo = common.RemoteInfo.fromFullAuthority(authority);
+    const remoteInfo = remoteParse.remoteFromFullAuthority(authority);
     const context = getContext();
 
     context.subscriptions.push(vscode.workspace.registerResourceLabelFormatter(
@@ -26,11 +27,15 @@ function doResolve(authority: string): vscode.ManagedResolvedAuthority {
         console.log("No connection token specified.");
     }
 
-
-    return new vscode.ManagedResolvedAuthority(
-        () => { return tcpTransport.connect(remoteInfo.host, remoteInfo.port) },
-        remoteInfo.connectionToken
-    );
+    if (remoteInfo.transport === common.TransportMethod.TCP) {
+        // TODO: proper subclass vscode.ManagedResolvedAuthority
+        const tcpTransportInfo = remoteInfo.transportinfo as common.TcpTransportInfo;
+        return new vscode.ManagedResolvedAuthority(
+            () => { return tcpTransport.connect(tcpTransportInfo.host, tcpTransportInfo.port) },
+            remoteInfo.connectionToken
+        );
+    }
+    throw new Error("Transport not yet implemented!");
 }
 
 export class AuthorityResolver implements vscode.RemoteAuthorityResolver {
