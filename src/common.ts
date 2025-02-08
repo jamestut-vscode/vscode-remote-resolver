@@ -350,6 +350,8 @@ async function connDataUpgrade2() {
 	// upgrade from version 2 to 3
 	console.warn("Upgrading data version 2 to 3 ...");
 	dataStor.update(CONNMGR_DATA_VERSION_KEY, 3);
+	// more straightfoward to just remove the recent connection entry
+	dataStor.update(RECENT_CONN_KEY, undefined);
 
 	const strData = await readConnDataRaw();
 	if (!strData.length) return;
