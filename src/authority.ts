@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import * as common from './common';
+import * as tm from './transport/meta';
 import * as remoteParse from './remoteParse';
 import { getContext } from './extension';
 import * as tcpTransport from './transport/tcp';
@@ -28,9 +28,9 @@ function doResolve(authority: string): vscode.ManagedResolvedAuthority {
     }
 
     switch (remoteInfo.transport) {
-        case common.TransportMethod.TCP:
+        case tm.TransportMethod.TCP:
             return tcpTransport.makeAuthority(
-                remoteInfo.transportinfo as common.TcpTransportInfo,
+                remoteInfo.transportinfo as tm.TcpTransportInfo,
                 remoteInfo.connectionToken
             );
         default:

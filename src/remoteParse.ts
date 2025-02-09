@@ -1,4 +1,5 @@
 import * as common from './common';
+import * as tm from './transport/meta';
 
 const separatorRe = /(?<!\\)\+/g;
 
@@ -9,7 +10,7 @@ export function remoteFromAddress(address: string, label?: string): common.Remot
     if (addrComponents.length >= 4) {
         throw new Error("Too many components in the address");
     }
-    if (!common.SupportedTransportMethod.has(addrComponents[0])) {
+    if (!tm.SupportedTransportMethod.has(addrComponents[0])) {
         throw new Error("Unsupported transport method");
     }
     if (addrComponents.length <= 1) {
@@ -17,10 +18,10 @@ export function remoteFromAddress(address: string, label?: string): common.Remot
     }
     const [transportMethod, addressComponent, connectionToken] = addrComponents;
 
-    let transportInfo: common.TransportInfo;
+    let transportInfo: tm.TransportInfo;
     switch (transportMethod) {
-        case common.TransportMethod.TCP:
-            transportInfo = common.TcpTransportInfo.fromAddress(addressComponent);
+        case tm.TransportMethod.TCP:
+            transportInfo = tm.TcpTransportInfo.fromAddress(addressComponent);
             break;
         default:
             throw new Error("Not implemented");

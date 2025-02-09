@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as tm from './transport/meta';
 import { extContext, dataStor } from './extension';
 
 export const RECENT_CONN_KEY = "recentConnDetails";
@@ -21,70 +22,6 @@ let currGenId: number = -1;
 let connDataFilePath: vscode.Uri | undefined;
 let currConnData: ContainerInfo;
 
-export enum TransportMethod {
-	TCP = "tcp",
-	UDS = "uds",
-	PIPE = "pipe",
-}
-
-export const SupportedTransportMethod = new Set<string>(Object.values(TransportMethod));
-
-export interface TransportInfo {
-	readonly authorityPart: string;
-
-	toJSON(): any;
-}
-
-export class TcpTransportInfo implements TransportInfo {
-	public readonly authorityPart: string;
-
-	constructor(
-		public readonly host: string,
-		public readonly port: number,
-	) {
-		if (!host.length) {
-			throw new Error("Host part is empty");
-		}
-
-		if (host.indexOf(":") >= 0) {
-			// IPv6 address
-			if (!host.startsWith('[') && !host.endsWith(']')) {
-				host = `[${host}]`;
-			}
-		}
-
-		if (port < 0 || port > 0xFFFF) {
-			throw new Error("Invalid port number");
-		}
-
-		this.authorityPart = [host, port].join(":");
-	}
-
-	static fromAddress(addrComponent: string): TcpTransportInfo {
-		const spltIndex = addrComponent.lastIndexOf(':');
-		if (spltIndex < 0) {
-			throw new Error("Address must consists of hostname and port number");
-		}
-		const hostPart = addrComponent.substring(0, spltIndex);
-		const portPart = parseInt(addrComponent.substring(spltIndex + 1));
-		if (isNaN(portPart)) {
-			throw new Error("Port must be an integer");
-		}
-		return new TcpTransportInfo(hostPart, portPart);
-	}
-
-	static fromJSON(obj: any): TransportInfo {
-		return new TcpTransportInfo(obj.host, obj.port);
-	}
-
-	toJSON() {
-		return {
-			host: this.host,
-			port: this.port
-		}
-	}
-}
-
 export class RemoteInfo {
 	public readonly displayLabel: string;
 	public readonly description: string;
@@ -94,8 +31,8 @@ export class RemoteInfo {
 	public readonly address: string;
 
 	constructor(
-		public readonly transport: TransportMethod,
-		public readonly transportinfo: TransportInfo,
+		public readonly transport: tm.TransportMethod,
+		public readonly transportinfo: tm.TransportInfo,
 		public readonly label?: string,
 		public readonly connectionToken?: string
 	) {
@@ -161,10 +98,10 @@ export class RemoteInfo {
 	}
 
 	static fromJSON(obj: any): RemoteInfo {
-		let transportinfo: TransportInfo;
+		let transportinfo: tm.TransportInfo;
 		switch (obj.transport) {
-			case TransportMethod.TCP:
-				transportinfo = TcpTransportInfo.fromJSON(obj.transportinfo);
+			case tm.TransportMethod.TCP:
+				transportinfo = tm.TcpTransportInfo.fromJSON(obj.transportinfo);
 				break;
 			default:
 				throw new Error("Transport method is not supported");
