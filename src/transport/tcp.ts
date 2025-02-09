@@ -3,10 +3,12 @@ import * as net from 'net';
 import * as tm from './meta';
 
 export function makeAuthority(
+    transportMethod: tm.TransportMethod,
     transportInfo: tm.TcpTransportInfo,
     connectionToken: string | undefined
 ) {
-    return new vscode.ManagedResolvedAuthority(() => connect(transportInfo), connectionToken);
+    return new vscode.ManagedResolvedAuthority(
+        () => connect(transportMethod, transportInfo), connectionToken);
 }
 
 class TcpSocket implements vscode.ManagedMessagePassing {
@@ -49,18 +51,31 @@ class TcpSocket implements vscode.ManagedMessagePassing {
     }
 }
 
-export function connect(transportInfo: tm.TcpTransportInfo): Promise<vscode.ManagedMessagePassing> {
+function makeTcpSocket(transportInfo: tm.TcpTransportInfo, connectionListener?: () => void) {
     // node's socket for IPv6 doesn't like the []
     let host = transportInfo.host;
     if (host.startsWith('[') && host.endsWith(']')) {
         host = host.slice(1, -1);
     }
 
+    return net.createConnection({
+        host: host,
+        port: transportInfo.port
+    }, connectionListener);
+}
+
+export function connect(transportMethod: tm.TransportMethod, transportInfo: tm.TcpTransportInfo): Promise<vscode.ManagedMessagePassing> {
     return new Promise<vscode.ManagedMessagePassing>((resolve, reject) => {
-        const sock = net.createConnection({
-            host: host,
-            port: transportInfo.port
-        }, () => {
+        let sockMakerFn: (transportInfo: tm.TcpTransportInfo, connectionListener?: () => void) => net.Socket;
+        switch (transportMethod) {
+            case tm.TransportMethod.TCP:
+                sockMakerFn = makeTcpSocket;
+                break;
+            default:
+                throw new Error(`Transport method '${transportMethod} is not supported on this connector.'`)
+        }
+
+        const sock = sockMakerFn(transportInfo, () => {
             sock.off('error', reject);
             resolve(new TcpSocket(sock));
         });
