@@ -27,15 +27,15 @@ function doResolve(authority: string): vscode.ManagedResolvedAuthority {
         console.log("No connection token specified.");
     }
 
-    if (remoteInfo.transport === common.TransportMethod.TCP) {
-        // TODO: proper subclass vscode.ManagedResolvedAuthority
-        const tcpTransportInfo = remoteInfo.transportinfo as common.TcpTransportInfo;
-        return new vscode.ManagedResolvedAuthority(
-            () => { return tcpTransport.connect(tcpTransportInfo.host, tcpTransportInfo.port) },
-            remoteInfo.connectionToken
-        );
+    switch (remoteInfo.transport) {
+        case common.TransportMethod.TCP:
+            return tcpTransport.makeAuthority(
+                remoteInfo.transportinfo as common.TcpTransportInfo,
+                remoteInfo.connectionToken
+            );
+        default:
+            throw new Error(`Transport method '${remoteInfo.transport}' is not implemented!`);
     }
-    throw new Error("Transport not yet implemented!");
 }
 
 export class AuthorityResolver implements vscode.RemoteAuthorityResolver {

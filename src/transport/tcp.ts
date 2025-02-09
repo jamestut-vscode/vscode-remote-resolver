@@ -1,5 +1,13 @@
 import * as vscode from 'vscode';
 import * as net from 'net';
+import * as common from '../common';
+
+export function makeAuthority(
+    transportInfo: common.TcpTransportInfo,
+    connectionToken: string | undefined
+) {
+    return new vscode.ManagedResolvedAuthority(() => connect(transportInfo), connectionToken);
+}
 
 class TcpSocket implements vscode.ManagedMessagePassing {
     private readonly eeDidReceiveMessage = new vscode.EventEmitter<Uint8Array>();
@@ -41,9 +49,18 @@ class TcpSocket implements vscode.ManagedMessagePassing {
     }
 }
 
-export function connect(host: string, port: number): Promise<vscode.ManagedMessagePassing> {
+export function connect(transportInfo: common.TcpTransportInfo): Promise<vscode.ManagedMessagePassing> {
+    // node's socket for IPv6 doesn't like the []
+    let host = transportInfo.host;
+    if (host.startsWith('[') && host.endsWith(']')) {
+        host = host.slice(1, -1);
+    }
+
     return new Promise<vscode.ManagedMessagePassing>((resolve, reject) => {
-        const sock = net.createConnection({ host: host, port: port }, () => {
+        const sock = net.createConnection({
+            host: host,
+            port: transportInfo.port
+        }, () => {
             sock.off('error', reject);
             resolve(new TcpSocket(sock));
         });
