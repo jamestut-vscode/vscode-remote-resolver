@@ -1,7 +1,7 @@
 export enum TransportMethod {
     TCP = "tcp",
     UDS = "uds",
-    // PIPE = "pipe",
+    PIPE = "pipe",
 }
 
 export const SupportedTransportMethod = new Set<string>(Object.values(TransportMethod));
@@ -87,5 +87,82 @@ export class UdsTransportInfo implements TransportInfo {
         return {
             path: this.path
         }
+    }
+}
+
+class CommandLineParserIterator implements Iterable<string> {
+    // RE to split command line by its argument components
+    private readonly argPatt = /\s*(?:"((?:\\"|[^"])*)"|([^\s"]+))\s*/g;
+    // RE to unescape escaped quotes
+    private static readonly quotPatt = /\\"/g;
+
+    constructor(private commandLine: string) { }
+
+    [Symbol.iterator](): Iterator<string> {
+        return {
+            next: (): IteratorResult<string> => {
+                const match = this.argPatt.exec(this.commandLine);
+                let ret: string | undefined;
+
+                if (match !== null) {
+                    if (match[1] !== undefined) {
+                        // Quoted argument: replace escaped quotes
+                        ret = match[1].replace(CommandLineParserIterator.quotPatt, '"');
+                    } else if (match[2] !== undefined) {
+                        // Unquoted argument
+                        ret = match[2];
+                    }
+                }
+
+                return ret !== undefined ? {value: ret} : {value: undefined, done: true};
+            }
+        }
+    }
+}
+
+export class PipeTransportInfo implements TransportInfo {
+    private _authorityPart: string | undefined;
+
+    private static readonly escapeCheckPatt = /[\s"]/;
+    private static readonly quotPatt = /"/g;
+
+    constructor(public readonly args: string[]) {}
+
+    get authorityPart(): string {
+        if (this._authorityPart === undefined) {
+            this._authorityPart = PipeTransportInfo.flatten(this.args);
+        }
+        return this._authorityPart;
+    }
+
+    toJSON() {
+        return { args: this.args }
+    }
+
+    static fromAddress(addrComponent: string): PipeTransportInfo {
+        return new PipeTransportInfo(PipeTransportInfo.parse(addrComponent));
+    }
+
+    static fromJSON(obj: any): TransportInfo {
+        return new PipeTransportInfo(obj.args);
+    }
+
+    static parse(cmdline: string): string[] {
+        const ret = [...new CommandLineParserIterator(cmdline)];
+        if (!ret.length) {
+            throw new Error("Command line is empty");
+        }
+        return ret;
+    }
+
+    static flatten(args: string[]): string {
+        const ret: string[] = [];
+        for (let arg of args) {
+            if (PipeTransportInfo.escapeCheckPatt.test(arg)) {
+                arg = `"${arg.replace(PipeTransportInfo.quotPatt, '\\"')}"`
+            }
+            ret.push(arg);
+        }
+        return ret.join(" ");
     }
 }

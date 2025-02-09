@@ -3,6 +3,7 @@ import * as tm from './transport/meta';
 import * as remoteParse from './remoteParse';
 import { getContext } from './extension';
 import * as socketTransport from './transport/socket';
+import * as pipeTransport from './transport/pipe';
 
 // remote authority resolver
 function doResolve(authority: string): vscode.ManagedResolvedAuthority {
@@ -33,6 +34,11 @@ function doResolve(authority: string): vscode.ManagedResolvedAuthority {
             return socketTransport.makeAuthority(
                 remoteInfo.transport,
                 remoteInfo.transportinfo,
+                remoteInfo.connectionToken
+            );
+        case tm.TransportMethod.PIPE:
+            return pipeTransport.makeAuthority(
+                remoteInfo.transportinfo as tm.PipeTransportInfo,
                 remoteInfo.connectionToken
             );
         default:
