@@ -11,7 +11,7 @@ export function makeAuthority(
         () => connect(transportMethod, transportInfo), connectionToken);
 }
 
-class TcpSocket implements vscode.ManagedMessagePassing {
+class SocketTransport implements vscode.ManagedMessagePassing {
     private readonly eeDidReceiveMessage = new vscode.EventEmitter<Uint8Array>();
     onDidReceiveMessage: vscode.Event<Uint8Array>;
 
@@ -90,7 +90,7 @@ export function connect(transportMethod: tm.TransportMethod, transportInfo: tm.T
 
         const sock = sockMakerFn(transportInfo, () => {
             sock.off('error', reject);
-            resolve(new TcpSocket(sock));
+            resolve(new SocketTransport(sock));
         });
 
         // Disable Nagle's algorithm.
