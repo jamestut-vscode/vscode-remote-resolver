@@ -4,7 +4,7 @@ import * as tm from './meta';
 
 export function makeAuthority(
     transportMethod: tm.TransportMethod,
-    transportInfo: tm.TcpTransportInfo,
+    transportInfo: tm.TransportInfo,
     connectionToken: string | undefined
 ) {
     return new vscode.ManagedResolvedAuthority(
@@ -51,25 +51,38 @@ class TcpSocket implements vscode.ManagedMessagePassing {
     }
 }
 
-function makeTcpSocket(transportInfo: tm.TcpTransportInfo, connectionListener?: () => void) {
+function makeTcpSocket(transportInfo: tm.TransportInfo, connectionListener?: () => void): net.Socket {
+    const ti = transportInfo as tm.TcpTransportInfo;
+
     // node's socket for IPv6 doesn't like the []
-    let host = transportInfo.host;
+    let host = ti.host;
     if (host.startsWith('[') && host.endsWith(']')) {
         host = host.slice(1, -1);
     }
 
     return net.createConnection({
         host: host,
-        port: transportInfo.port
+        port: ti.port
     }, connectionListener);
 }
 
-export function connect(transportMethod: tm.TransportMethod, transportInfo: tm.TcpTransportInfo): Promise<vscode.ManagedMessagePassing> {
+function makeUdsSocket(transportInfo: tm.TransportInfo, connectionListener?: () => void): net.Socket {
+    const ti = transportInfo as tm.UdsTransportInfo;
+
+    return net.createConnection({
+        path: ti.path
+    }, connectionListener);
+}
+
+export function connect(transportMethod: tm.TransportMethod, transportInfo: tm.TransportInfo): Promise<vscode.ManagedMessagePassing> {
     return new Promise<vscode.ManagedMessagePassing>((resolve, reject) => {
-        let sockMakerFn: (transportInfo: tm.TcpTransportInfo, connectionListener?: () => void) => net.Socket;
+        let sockMakerFn: (transportInfo: tm.TransportInfo, connectionListener?: () => void) => net.Socket;
         switch (transportMethod) {
             case tm.TransportMethod.TCP:
                 sockMakerFn = makeTcpSocket;
+                break;
+            case tm.TransportMethod.UDS:
+                sockMakerFn = makeUdsSocket;
                 break;
             default:
                 throw new Error(`Transport method '${transportMethod} is not supported on this connector.'`)

@@ -29,9 +29,10 @@ function doResolve(authority: string): vscode.ManagedResolvedAuthority {
 
     switch (remoteInfo.transport) {
         case tm.TransportMethod.TCP:
+        case tm.TransportMethod.UDS:
             return socketTransport.makeAuthority(
                 remoteInfo.transport,
-                remoteInfo.transportinfo as tm.TcpTransportInfo,
+                remoteInfo.transportinfo,
                 remoteInfo.connectionToken
             );
         default:

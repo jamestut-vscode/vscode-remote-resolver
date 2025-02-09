@@ -1,6 +1,6 @@
 export enum TransportMethod {
     TCP = "tcp",
-    // UDS = "uds",
+    UDS = "uds",
     // PIPE = "pipe",
 }
 
@@ -58,6 +58,34 @@ export class TcpTransportInfo implements TransportInfo {
         return {
             host: this.host,
             port: this.port
+        }
+    }
+}
+
+export class UdsTransportInfo implements TransportInfo {
+    public readonly authorityPart: string;
+
+    constructor(public readonly path: string) {
+        if (!path) {
+            throw new Error("Path is empty");
+        }
+        if (!path.startsWith("/")) {
+            throw new Error("Must be an absolute path");
+        }
+        this.authorityPart = path;
+    }
+
+    static fromAddress(addrComponent: string): UdsTransportInfo {
+        return new UdsTransportInfo(addrComponent);
+    }
+
+    static fromJSON(obj: any): TransportInfo {
+        return new UdsTransportInfo(obj.path);
+    }
+
+    toJSON() {
+        return {
+            path: this.path
         }
     }
 }

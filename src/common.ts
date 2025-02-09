@@ -103,6 +103,9 @@ export class RemoteInfo {
 			case tm.TransportMethod.TCP:
 				transportinfo = tm.TcpTransportInfo.fromJSON(obj.transportinfo);
 				break;
+			case tm.TransportMethod.UDS:
+				transportinfo = tm.UdsTransportInfo.fromJSON(obj.transportinfo);
+				break;
 			default:
 				throw new Error("Transport method is not supported");
 		}

@@ -23,6 +23,9 @@ export function remoteFromAddress(address: string, label?: string): common.Remot
         case tm.TransportMethod.TCP:
             transportInfo = tm.TcpTransportInfo.fromAddress(addressComponent);
             break;
+        case tm.TransportMethod.UDS:
+            transportInfo = tm.UdsTransportInfo.fromAddress(addressComponent);
+            break;
         default:
             throw new Error("Not implemented");
     }
