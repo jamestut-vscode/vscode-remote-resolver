@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as tm from './transport/meta';
 import * as remoteParse from './remoteParse';
 import { getContext } from './extension';
-import * as tcpTransport from './transport/tcp';
+import * as socketTransport from './transport/socket';
 
 // remote authority resolver
 function doResolve(authority: string): vscode.ManagedResolvedAuthority {
@@ -29,7 +29,7 @@ function doResolve(authority: string): vscode.ManagedResolvedAuthority {
 
     switch (remoteInfo.transport) {
         case tm.TransportMethod.TCP:
-            return tcpTransport.makeAuthority(
+            return socketTransport.makeAuthority(
                 remoteInfo.transport,
                 remoteInfo.transportinfo as tm.TcpTransportInfo,
                 remoteInfo.connectionToken
