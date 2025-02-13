@@ -19,8 +19,8 @@ export async function promptRemoteInput(
     title: string | undefined = undefined
 ) {
     return await vscode.window.showInputBox({
-        title: title || "Enter Remote Target (TCP)",
-        placeHolder: "transport+address(+connection token)",
+        title: title || "Enter Remote Target",
+        placeHolder: "transport method+address(+connection token)",
         value: remoteToEdit?.address,
         validateInput: validateRemoteInput,
         ignoreFocusOut: true
