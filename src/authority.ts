@@ -18,7 +18,7 @@ function doResolve(authority: string): vscode.ManagedResolvedAuthority {
                 label: "${path}",
                 separator: "/",
                 tildify: true,
-                workspaceSuffix: `REHexp: ${remoteInfo.displayLabel}`,
+                workspaceSuffix: `REH: ${remoteInfo.displayLabel}`,
                 workspaceTooltip: "Remote Extension Host (Experimental)"
             }
         }
