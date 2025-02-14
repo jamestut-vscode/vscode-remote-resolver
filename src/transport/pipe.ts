@@ -33,7 +33,7 @@ class PipeTransport implements vscode.ManagedMessagePassing {
 
         this.child = cp.spawn(cmdargs[0], cmdargs.slice(1), {
             // stdin: pipe | stdout: pipe | stderr: parent's
-            stdio: ['pipe', 'pipe', 0]
+            stdio: ['pipe', 'pipe', 'inherit']
         });
         this.child.stdout!.on('data', (data) => {
             this.eeDidReceiveMessage.fire(data);
