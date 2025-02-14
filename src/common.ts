@@ -24,7 +24,11 @@ let currConnData: ContainerInfo;
 
 export class RemoteInfo {
 	public readonly displayLabel: string;
+	// description is for display in remote selector
+	// it consists of "protocol+addr spec", without label or token
 	public readonly description: string;
+	// resource label is for display in the status bar
+	public readonly resourceLabel: string;
 	// fullAuthority is for passing around to "vscode-remote://"
 	public readonly fullAuthority: string;
 	// address is for user input. It is "transportMethod+authorityPart"
@@ -53,13 +57,15 @@ export class RemoteInfo {
 			fullAuthComp.push("");
 		}
 
+		// authorityPart only if unlabelled
+		this.resourceLabel = transportinfo.authorityPart
 		// transport method+authorityPart
 		this.description = this.displayLabel =
 			[transport, transportinfo.authorityPart].join("+");
 		if (label) {
 			RemoteInfo.checkLabelValid(label);
 			fullAuthComp.push(label);
-			this.displayLabel = label;
+			this.resourceLabel = this.displayLabel = label;
 		}
 
 		this.fullAuthority = fullAuthComp.join("+");

@@ -10,6 +10,8 @@ function doResolve(authority: string): vscode.ManagedResolvedAuthority {
     const remoteInfo = remoteParse.remoteFromFullAuthority(authority);
     const context = getContext();
 
+    const transportNameLookup = new Map(Object.entries(tm.TransportMethod).map(([key, val]) => [val, key]));
+    const transportName = transportNameLookup.get(remoteInfo.transport);
     context.subscriptions.push(vscode.workspace.registerResourceLabelFormatter(
         {
             scheme: "vscode-remote",
@@ -18,8 +20,8 @@ function doResolve(authority: string): vscode.ManagedResolvedAuthority {
                 label: "${path}",
                 separator: "/",
                 tildify: true,
-                workspaceSuffix: `REH: ${remoteInfo.displayLabel}`,
-                workspaceTooltip: "Remote Extension Host (Experimental)"
+                workspaceSuffix: `${transportName}: ${remoteInfo.resourceLabel}`,
+                workspaceTooltip: `Remote Extension Host (${transportName})`
             }
         }
     ));
