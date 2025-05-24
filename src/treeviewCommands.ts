@@ -80,9 +80,9 @@ export async function remoteManagerRemoveDirCommand(dirItem: treeview.DirectoryT
 
     uihelper.commonDeleteConfirmDialog(
         `Confirm delete '${dirItem.label}' and all of its entries`,
-        () => {
+        async () => {
             parentDirInfo.dirIds.splice(dirItem.entryIndex, 1);
-            removeDirRecursive(dirItem.entryId);
+            await removeDirRecursive(dirItem.entryId);
             commonTreeviewUpdate(dirItem.parentDir);
         }
     );
