@@ -90,7 +90,8 @@ export async function remoteManagerRemoveDirCommand(dirItem: treeview.DirectoryT
 
 async function removeDirRecursive(dirId: string) {
     const connData = await common.getConnData();
-    const rmDirInfo = connData.directories.get(dirId)!;
+    const rmDirInfo = connData.directories.get(dirId);
+    if (rmDirInfo === undefined) return;
 
     for (const chldRemoteId of rmDirInfo.remoteIds) {
         connData.remotes.delete(chldRemoteId);
