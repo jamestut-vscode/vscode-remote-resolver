@@ -96,7 +96,7 @@ async function removeDirRecursive(dirId: string) {
         connData.remotes.delete(chldRemoteId);
     }
     for (const chldDirId of rmDirInfo.dirIds) {
-        removeDirRecursive(chldDirId);
+        await removeDirRecursive(chldDirId);
     }
     connData.directories.delete(dirId);
 }
