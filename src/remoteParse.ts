@@ -1,3 +1,4 @@
+import { decodeFromBase36 } from './baseCoder';
 import * as common from './common';
 import * as tm from './transport/meta';
 
@@ -60,7 +61,7 @@ export function remoteFromFullAuthority(fullAuth: string): common.RemoteInfo {
         throw new Error("Invalid remote authority protocol");
     }
 
-    let addressComp = [transportMethod, decodeURIComponent(encodedAddress)];
+    let addressComp = [transportMethod, decodeFromBase36(encodedAddress)];
     // do not include empty connection token to remoteFromAddress
     if (connectionToken) {
         addressComp.push(connectionToken);

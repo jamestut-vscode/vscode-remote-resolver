@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as tm from './transport/meta';
 import { extContext, dataStor } from './extension';
+import { encodeToBase36 } from './baseCoder';
 
 export const RECENT_CONN_KEY = "recentConnDetails";
 export const CONNMGR_DATA_GENID_KEY = "connectionDataGenId";
@@ -40,13 +41,13 @@ export class RemoteInfo {
 		public readonly label?: string,
 		public readonly connectionToken?: string
 	) {
-		// "jra"+transport method+encodeURIComponent(authorityPart)+connection token+label
+		// "jra"+transport method+encoded(authorityPart)+connection token+label
 		const fullAuthComp: string[] = ["jra", transport];
 		// transport method+authorityPart+connection token
 		const addressComp: string[] = [transport];
 
 		addressComp.push(transportinfo.authorityPart);
-		fullAuthComp.push(encodeURIComponent(transportinfo.authorityPart));
+		fullAuthComp.push(encodeToBase36(transportinfo.authorityPart));
 
 		if (connectionToken !== undefined) {
 			RemoteInfo.checkTokenValid(connectionToken);
