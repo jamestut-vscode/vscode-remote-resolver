@@ -41,6 +41,8 @@ For **remote labels**, only these characters are allowed:
 - Space
 - Dash (`-`) and dot (`.`).
 
+Note that for the `pipe` transport, the supplied command must immediately redirect the input and output of the VSCode server. For instance, it cannot display a banner or prompt for a password.
+
 ## REH Launcher
 
 The `launcher` program is bundled in the REH archive of VSCode version `1.99.3-m2` or later. It can be found in the `bin/launcher` directory.
