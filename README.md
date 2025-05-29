@@ -40,3 +40,21 @@ For **remote labels**, only these characters are allowed:
 - Alphanumeric
 - Space
 - Dash (`-`) and dot (`.`).
+
+## REH Launcher
+
+The `launcher` program is bundled in the REH archive of VSCode version `1.99.3-m2` or later. It can be found in the `bin/launcher` directory.
+
+`launcher` is designed to work with the `pipe` transport method. To use it, specify the command to run `launcher` within the `pipe` address configuration. For example, if the VSCode REH is stored in the home directory of an SSH server, the address would be:
+
+```
+pipe+ssh james@target-server.local /home/james/vscode-reh-linux-arm64/bin/launcher
+```
+
+`launcher` will do the following:
+- Starts a VSCode server if one is not already running.
+  - The VSCode server instance listens on a local Unix socket.
+  - It automatically shuts down when no clients remain connected.
+- Redirects standard I/O transport to the local Unix socket.
+
+Note that the behavior of `launcher` can be customized using command-line arguments. Run `launcher --help` to view the available options.
