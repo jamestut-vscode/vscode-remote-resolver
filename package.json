@@ -17,13 +17,13 @@
     "ui"
   ],
   "scripts": {
-    "compile": "npx gulp compile-extension:vscode-remote-resolver",
-    "watch": "npx gulp watch-extension:vscode-remote-resolver"
+    "compile": "node esbuild.mts",
+    "watch": "node esbuild.mts --watch"
   },
   "activationEvents": [
     "onResolveRemoteAuthority:jra"
   ],
-  "main": "./out/extension",
+  "main": "./dist/extension.js",
   "devDependencies": {
     "@types/node": "^20",
     "typescript": "^5"
